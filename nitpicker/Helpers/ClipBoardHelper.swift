@@ -10,13 +10,12 @@ import ApplicationServices
 
 class ClipboardHelper {
     static func copySelectedText() -> String? {
-        print("ClipboardHelper: Attempt to copy selected text")
+        print("ClipboardHelper: Attempt to copy the selected text.")
         
-        // Check for accessibility permissions
-        if !AXIsProcessTrusted() {
+        // Check for accessibility permissions using the centralized manager
+        if !AccessibilityPermissionManager.shared.hasAccessibilityPermissions {
             print("ClipboardHelper: ⚠️ Accessibility permissions not granted")
-            // Display notification to user
-            showAccessibilityAlert()
+            AccessibilityPermissionManager.shared.showAccessibilityAlert()
             return nil
         }
         
@@ -66,29 +65,15 @@ class ClipboardHelper {
         return selectedText
     }
     
-    private static func showAccessibilityAlert() {
-        DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.messageText = "Accessibility Permissions Required"
-            alert.informativeText = "Nitpicker needs accessibility permissions to capture and replace text. Please grant accessibility permissions in System Preferences."
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "Open System Preferences")
-            alert.addButton(withTitle: "Later")
-            
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane"))
-            }
-        }
-    }
+    // Remove duplicate alert method - using centralized version in AccessibilityPermissionManager
 
     static func replaceSelectedText(with text: String) {
         print("ClipboardHelper: Attempting to replace selected text")
         
-        // Check for accessibility permissions
-        if !AXIsProcessTrusted() {
+        // Check for accessibility permissions using the centralized manager
+        if !AccessibilityPermissionManager.shared.hasAccessibilityPermissions {
             print("ClipboardHelper: ⚠️ Accessibility permissions not granted")
-            showAccessibilityAlert()
+            AccessibilityPermissionManager.shared.showAccessibilityAlert()
             return
         }
         

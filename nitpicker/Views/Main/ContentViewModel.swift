@@ -13,6 +13,13 @@ class ContentViewModel: ObservableObject {
     @Published var lastCorrection: ClippedText?
 
     func correctSelectedText() {
+        // First verify accessibility permissions are granted
+        let permissionManager = AccessibilityPermissionManager.shared
+        if !permissionManager.hasAccessibilityPermissions {
+            print("ContentViewModel: ⚠️ Cannot correct text - accessibility permissions not granted")
+            permissionManager.showAccessibilityAlert()
+            return
+        }
         
         guard let selectedText = ClipboardHelper.copySelectedText() else {
             return

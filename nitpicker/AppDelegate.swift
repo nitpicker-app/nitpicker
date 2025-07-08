@@ -16,12 +16,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("Application did finish launching")
         
-        // Check accessibility permissions only when necessary
+        // Check accessibility permissions with improved logic
         let permissionManager = AccessibilityPermissionManager.shared
-        if permissionManager.shouldCheckPermission {
-            permissionManager.checkAndRequestAccessibilityPermissions()
+        
+        // Always check the actual system permission status
+        if !permissionManager.hasAccessibilityPermissions {
+            print("⚠️ Accessibility permissions not granted - requesting now")
+            permissionManager.checkAndRequestAccessibilityPermissions(showUI: true)
+        } else if permissionManager.shouldCheckPermission {
+            // Permission is granted, but we should verify status periodically
+            permissionManager.checkAndRequestAccessibilityPermissions(showUI: false)
+            print("✅ Accessibility permissions verified")
         } else {
-            print("✅ Skipping accessibility check - already granted previously")
+            print("✅ Skipping accessibility check - already verified recently")
         }
         
         let contentView = ContentView(viewModel: viewModel)
