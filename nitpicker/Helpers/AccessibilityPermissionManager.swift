@@ -11,11 +11,56 @@ import Cocoa
 class AccessibilityPermissionManager {
     static let shared = AccessibilityPermissionManager()
     
-    func checkAndRequestAccessibilityPermissions() {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true]
-        let accessibilityEnabled = AXIsProcessTrustedWithOptions(options)
+    private let userDefaults = UserDefaults.standard
+    private let permissionGrantedKey = "accessibilityPermissionGranted"
+    private let lastCheckTimeKey = "accessibilityLastCheckTime"
+    private let checkIntervalInDays = 7.0 // Check once per week at most
+    
+    var isPermissionGranted: Bool {
+        return userDefaults.bool(forKey: permissionGrantedKey)
+    }
+    
+    var shouldCheckPermission: Bool {
+        // If permission was never granted, always check
+        if !isPermissionGranted {
+            return true
+        }
         
-        if !accessibilityEnabled {
+        // If we already have permission, only check occasionally
+        let lastCheckTime = userDefaults.double(forKey: lastCheckTimeKey)
+        let currentTime = Date().timeIntervalSince1970
+        let daysSinceLastCheck = (currentTime - lastCheckTime) / (60 * 60 * 24)
+        
+        return daysSinceLastCheck >= checkIntervalInDays
+    }
+    
+    private func savePermissionStatus(_ granted: Bool) {
+        userDefaults.set(granted, forKey: permissionGrantedKey)
+        userDefaults.set(Date().timeIntervalSince1970, forKey: lastCheckTimeKey)
+    }
+    
+    func checkAndRequestAccessibilityPermissions() {
+        // Check if permission is actually granted at the system level without prompting
+        let accessibilityEnabled = AXIsProcessTrusted()
+        
+        if accessibilityEnabled {
+            // If we have permission now, save this status and return
+            savePermissionStatus(true)
+            print("✅ Accessibility permissions already granted")
+            return
+        }
+        
+        // No permission, show the prompt with options
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true]
+        let accessibilityEnabledAfterPrompt = AXIsProcessTrustedWithOptions(options)
+        
+        if accessibilityEnabledAfterPrompt {
+            // Permission was just granted after the prompt
+            savePermissionStatus(true)
+            print("✅ Accessibility permissions granted")
+        } else {
+            // User didn't grant permission or closed the system dialog
+            savePermissionStatus(false)
             print("⚠️ Accessibility permissions are required for Nitpicker to function properly.")
             print("⚠️ Please grant accessibility permissions in System Preferences -> Security & Privacy -> Privacy -> Accessibility")
             
@@ -34,8 +79,10 @@ class AccessibilityPermissionManager {
                     NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane"))
                 }
             }
-        } else {
-            print("✅ Accessibility permissions granted")
         }
+    }
+    
+    func resetPermissionStatus() {
+        savePermissionStatus(false)
     }
 }

@@ -16,8 +16,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("Application did finish launching")
         
-        // Check for accessibility permissions
-        AccessibilityPermissionManager.shared.checkAndRequestAccessibilityPermissions()
+        // Check accessibility permissions only when necessary
+        let permissionManager = AccessibilityPermissionManager.shared
+        if permissionManager.shouldCheckPermission {
+            permissionManager.checkAndRequestAccessibilityPermissions()
+        } else {
+            print("✅ Skipping accessibility check - already granted previously")
+        }
         
         let contentView = ContentView(viewModel: viewModel)
         statusBarController = StatusBarController(contentView: contentView)

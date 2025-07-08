@@ -13,14 +13,11 @@ class ContentViewModel: ObservableObject {
     @Published var lastCorrection: ClippedText?
 
     func correctSelectedText() {
-        print("MainViewModel: Attempting to correct selected text")
         
         guard let selectedText = ClipboardHelper.copySelectedText() else {
-            print("MainViewModel: No text selected or could not access clipboard")
             return
         }
-
-        print("MainViewModel: Selected text: \(String(selectedText.prefix(50)))...")
+        
         isLoading = true
 
         OpenAIService.shared.correctGrammar(text: selectedText) { [weak self] corrected in
