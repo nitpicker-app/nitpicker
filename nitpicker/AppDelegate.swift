@@ -23,12 +23,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !permissionManager.hasAccessibilityPermissions {
             print("⚠️ Accessibility permissions not granted - requesting now")
             permissionManager.checkAndRequestAccessibilityPermissions(showUI: true)
-        } else if permissionManager.shouldCheckPermission {
-            // Permission is granted, but we should verify status periodically
-            permissionManager.checkAndRequestAccessibilityPermissions(showUI: false)
-            print("✅ Accessibility permissions verified")
-        } else {
-            print("✅ Skipping accessibility check - already verified recently")
         }
         
         let contentView = ContentView(viewModel: viewModel)

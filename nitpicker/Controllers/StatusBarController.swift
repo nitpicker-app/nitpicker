@@ -55,12 +55,13 @@ class StatusBarController: NSObject, NSWindowDelegate {
     private func createStyledWindow(width: CGFloat, height: CGFloat, contentView: NSViewController) -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
-            styleMask: [.borderless, .fullSizeContentView],
+            styleMask: [.borderless, .closable, .resizable,.titled],
             backing: .buffered,
             defer: false
         )
         
         window.backgroundColor = .clear
+        window.titlebarAppearsTransparent = true
         window.isOpaque = false
         window.hasShadow = true
         window.contentViewController = contentView
@@ -82,7 +83,7 @@ class StatusBarController: NSObject, NSWindowDelegate {
     
     @objc func showAPISettings() {
         if apiSettingsWindowController == nil {
-            let apiKeyView = APIKeyView()
+            let apiKeyView = APISettingsView()
             createAndShowWindow(
                 size: NSSize(width: 340, height: 320),
                 rootView: apiKeyView,

@@ -15,7 +15,7 @@ class ClipboardHelper {
         // Check for accessibility permissions using the centralized manager
         if !AccessibilityPermissionManager.shared.hasAccessibilityPermissions {
             print("ClipboardHelper: ⚠️ Accessibility permissions not granted")
-            AccessibilityPermissionManager.shared.showAccessibilityAlert()
+            AccessibilityPermissionManager.shared.checkAndRequestAccessibilityPermissions(showUI: true)
             return nil
         }
         
@@ -73,7 +73,7 @@ class ClipboardHelper {
         // Check for accessibility permissions using the centralized manager
         if !AccessibilityPermissionManager.shared.hasAccessibilityPermissions {
             print("ClipboardHelper: ⚠️ Accessibility permissions not granted")
-            AccessibilityPermissionManager.shared.showAccessibilityAlert()
+            AccessibilityPermissionManager.shared.checkAndRequestAccessibilityPermissions(showUI: true)
             return
         }
         

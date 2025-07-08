@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct APIKeyView: View {
+struct APISettingsView: View {
     @State private var apiKey: String =
         UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
     @State private var isSaved = false
@@ -15,23 +15,8 @@ struct APIKeyView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            ZStack {
-                Text("OpenAI API Key")
-                    .font(.system(size: 16, weight: .semibold))
-
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .frame(maxWidth: .infinity)
+            Text("OpenAI API Key")
+                .font(.system(size: 16, weight: .semibold))
 
             Divider()
                 .padding(.bottom, 4)
@@ -85,5 +70,5 @@ struct APIKeyView: View {
 }
 
 #Preview {
-    APIKeyView()
+    APISettingsView()
 }

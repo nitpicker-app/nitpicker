@@ -8,98 +8,90 @@
 import Foundation
 import Cocoa
 
-class AccessibilityPermissionManager {
+final class AccessibilityPermissionManager {
     static let shared = AccessibilityPermissionManager()
-    
-    private let userDefaults = UserDefaults.standard
-    private let permissionGrantedKey = "accessibilityPermissionGranted"
-    private let lastCheckTimeKey = "accessibilityLastCheckTime"
-    private let checkIntervalInDays = 7.0 // Check once per week at most
-    
-    // Check if accessibility permissions are currently granted at the system level
+
+    /// Checks whether the app currently has accessibility permission.
     var hasAccessibilityPermissions: Bool {
-        return AXIsProcessTrusted()
+        AXIsProcessTrusted()
     }
-    
-    // Cached permission state (to avoid frequent system checks)
-    var isPermissionGranted: Bool {
-        return userDefaults.bool(forKey: permissionGrantedKey)
-    }
-    
-    var shouldCheckPermission: Bool {
-        // If permission was never granted, always check
-        if !isPermissionGranted {
-            return true
-        }
-        
-        // If we already have permission, only check occasionally
-        let lastCheckTime = userDefaults.double(forKey: lastCheckTimeKey)
-        let currentTime = Date().timeIntervalSince1970
-        let daysSinceLastCheck = (currentTime - lastCheckTime) / (60 * 60 * 24)
-        
-        return daysSinceLastCheck >= checkIntervalInDays
-    }
-    
-    private func savePermissionStatus(_ granted: Bool) {
-        userDefaults.set(granted, forKey: permissionGrantedKey)
-        userDefaults.set(Date().timeIntervalSince1970, forKey: lastCheckTimeKey)
-    }
-    
-    /// Check and request accessibility permissions if needed
-    /// - Parameter showUI: Whether to show UI prompts if permission is not granted
-    /// - Returns: true if permission is granted, false otherwise
+
+    /// Checks for accessibility permissions and optionally prompts the user.
+    /// - Parameter showUI: Whether to show UI prompts if permission is not granted.
+    /// - Returns: `true` if permission is already granted, `false` otherwise.
     @discardableResult
     func checkAndRequestAccessibilityPermissions(showUI: Bool = true) -> Bool {
-        // Check if permission is actually granted at the system level without prompting
         if hasAccessibilityPermissions {
-            // If we have permission now, save this status and return
-            savePermissionStatus(true)
-            print("✅ Accessibility permissions already granted")
             return true
         }
-        
+
         if showUI {
-            // No permission, show the prompt with options
-            let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString: true]
-            let accessibilityEnabledAfterPrompt = AXIsProcessTrustedWithOptions(options)
-            
-            if accessibilityEnabledAfterPrompt {
-                // Permission was just granted after the prompt
-                savePermissionStatus(true)
-                print("✅ Accessibility permissions granted")
-                return true
-            } else {
-                // User didn't grant permission or closed the system dialog
-                savePermissionStatus(false)
-                print("⚠️ Accessibility permissions are required for Nitpicker to function properly.")
-                print("⚠️ Please grant accessibility permissions in System Preferences -> Security & Privacy -> Privacy -> Accessibility")
-                
-                showAccessibilityAlert()
-            }
+            promptUserToEnableAccessibility()
         }
-        
+
         return false
     }
-    
-    /// Show a standard alert to guide the user to grant accessibility permissions
-    func showAccessibilityAlert() {
+
+    /// Prompts the user with an alert explaining the need for accessibility permissions
+    /// and offers to open the System Settings. If permission is still not granted afterward,
+    /// a restart is suggested.
+    private func promptUserToEnableAccessibility() {
         DispatchQueue.main.async {
             let alert = NSAlert()
             alert.messageText = "Accessibility Permissions Required"
-            alert.informativeText = "Nitpicker needs accessibility permissions to capture and replace text. Please grant accessibility permissions in System Preferences -> Security & Privacy -> Privacy -> Accessibility"
+            alert.informativeText = """
+            Nitpicker needs accessibility permissions to capture and replace text.
+            Please enable this in System Settings → Privacy & Security → Accessibility.
+            """
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "Open System Preferences")
+            alert.addButton(withTitle: "Open System Settings")
             alert.addButton(withTitle: "Later")
-            
+
             let response = alert.runModal()
+
             if response == .alertFirstButtonReturn {
-                // Open the Security & Privacy preferences
-                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane"))
+                self.openAccessibilitySettings()
+
+                // Give the user a moment to act, then recheck and possibly offer a restart
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    if !self.hasAccessibilityPermissions {
+                        self.showRestartAlert()
+                    }
+                }
             }
         }
     }
-    
-    func resetPermissionStatus() {
-        savePermissionStatus(false)
+
+    /// Opens the System Settings directly to the Accessibility section.
+    private func openAccessibilitySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Prompts the user to restart the app in order for permission changes to take effect.
+    private func showRestartAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Restart Required"
+        alert.informativeText = "Please restart Nitpicker to apply the newly granted Accessibility permissions."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Restart Now")
+        alert.addButton(withTitle: "Later")
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            relaunchApp()
+        }
+    }
+
+    /// Relaunches the current app instance.
+    func relaunchApp() {
+        guard let bundlePath = Bundle.main.bundlePath as String? else { return }
+
+        let task = Process()
+        task.launchPath = "/usr/bin/open"
+        task.arguments = ["-n", bundlePath]
+        task.launch()
+
+        NSApp.terminate(nil)
     }
 }

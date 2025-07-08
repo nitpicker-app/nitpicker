@@ -17,7 +17,7 @@ class ContentViewModel: ObservableObject {
         let permissionManager = AccessibilityPermissionManager.shared
         if !permissionManager.hasAccessibilityPermissions {
             print("ContentViewModel: ⚠️ Cannot correct text - accessibility permissions not granted")
-            permissionManager.showAccessibilityAlert()
+            permissionManager.checkAndRequestAccessibilityPermissions(showUI: true)
             return
         }
         
