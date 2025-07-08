@@ -12,12 +12,6 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         VStack(spacing: 16) {
-            Text("About Nitpicker")
-                .font(.system(size: 16, weight: .semibold))
-
-            Divider()
-                .padding(.bottom, 8)
-
             if let appIcon = NSApp.applicationIconImage {
                 Image(nsImage: appIcon)
                     .resizable()
@@ -44,27 +38,16 @@ struct AboutView: View {
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
 
-            HStack(spacing: 20) {
-                Button("Credits") {
-                    // Could be implemented later
+            Button("Website") {
+                if let url = URL(
+                    string: "https://github.com/nipicker-app/nitpicker"
+                ) {
+                    NSWorkspace.shared.open(url)
                 }
-                .buttonStyle(LinkButtonStyle())
-
-                Button("Website") {
-                    if let url = URL(
-                        string: "https://github.com/nipicker-app/nitpicker"
-                    ) {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-                .buttonStyle(LinkButtonStyle())
             }
-            .padding(.top, 4)
-
-            Spacer()
+            .buttonStyle(LinkButtonStyle())
         }
-        .padding()
-        .frame(width: 340, height: 360)
+        .frame(width: 340, height: 360.0)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                 .cornerRadius(20)
