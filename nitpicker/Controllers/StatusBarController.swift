@@ -24,7 +24,7 @@ class StatusBarController: NSObject, NSWindowDelegate {
         super.init()
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "hammer", accessibilityDescription: nil)
+            button.image = NSImage(systemSymbolName: "character.cursor.ibeam", accessibilityDescription: nil)
             // We'll use rightMouseUp for the menu
             button.action = #selector(handleStatusItemClick)
         }
@@ -38,9 +38,6 @@ class StatusBarController: NSObject, NSWindowDelegate {
     
     private func setupMenu() {
         let menu = NSMenu()
-        
-        // Main action item
-        menu.addItem(NSMenuItem(title: "Correct Selected Text", action: #selector(correctSelectedText), keyEquivalent: "g"))
         
         menu.addItem(NSMenuItem.separator())
         
