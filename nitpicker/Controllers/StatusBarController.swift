@@ -26,10 +26,16 @@ class StatusBarController: NSObject, NSWindowDelegate {
 
     private func setupStatusBarButton() {
         if let button = statusItem.button {
+            // Create the image with a specific symbol configuration for proper sizing
+            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
             button.image = NSImage(
-                systemSymbolName: "character.cursor.ibeam",
+                systemSymbolName: "character.cursor.ibeam", 
                 accessibilityDescription: nil
-            )
+            )?.withSymbolConfiguration(config)
+            
+            // Ensure the image is properly sized and positioned in the status bar
+            button.image?.size = NSSize(width: 16, height: 16)
+            button.imagePosition = .imageLeft
             button.action = #selector(handleStatusItemClick)
         }
     }

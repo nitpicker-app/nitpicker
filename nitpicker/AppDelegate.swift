@@ -6,6 +6,7 @@
 //
 
 import Cocoa
+import ServiceManagement
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -14,21 +15,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("Application did finish launching")
-        
+
         // Check if preview is running
-        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-            print("Running in Xcode Previews mode - skipping full initialization")
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"]
+            == "1"
+        {
+            print(
+                "Running in Xcode Previews mode - skipping full initialization"
+            )
         } else {
             //         Check accessibility permissions with improved logic
             let permissionManager = AccessibilityPermissionManager.shared
 
             // Always check the actual system permission status
             if !permissionManager.hasAccessibilityPermissions {
-                print("⚠️ Accessibility permissions not granted - requesting now")
+                print(
+                    "⚠️ Accessibility permissions not granted - requesting now"
+                )
                 permissionManager.checkAndRequestAccessibilityPermissions(
                     showUI: true
                 )
             }
+            
+            registerAppForAutoLaunch()
         }
 
         let contentView = ContentView(viewModel: viewModel)
@@ -41,6 +50,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HotKeyManager.shared.registerHotKey { [weak self] in
             print("HotKey triggered: Cmd+Shift+G")
             self?.viewModel.correctSelectedText()
+        }
+    }
+
+    private func registerAppForAutoLaunch() {
+        do {
+            let appService = SMAppService.mainApp
+            if appService.status != .enabled {
+                try appService.register()
+                print("✅ Registered Nitpicker to auto-launch at login")
+            } else {
+                print("ℹ️ Nitpicker is already registered for auto-launch")
+            }
+        } catch {
+            print("❌ Failed to register for auto-launch: \(error)")
         }
     }
 
