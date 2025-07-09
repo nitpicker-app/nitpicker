@@ -2,7 +2,8 @@
 
 A macOS menubar application that helps you correct grammar in any text on your Mac. Nitpicker uses OpenAI's API to provide high-quality grammar corrections directly from your menubar.
 
-![Nitpicker Logo](https://via.placeholder.com/150?text=Nitpicker)
+![Nitpicker Logo](https://github.com/user-attachments/assets/5b6a0af5-c0cc-4821-86b1-4fa2962da171)
+
 
 ## Features
 
