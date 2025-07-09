@@ -1,7 +1,7 @@
 
 
 <div align="center">
-   <img src="https://github.com/user-attachments/assets/5b6a0af5-c0cc-4821-86b1-4fa2962da171" alt="Nitpicker Logo" width="300" />
+   <img src="https://github.com/user-attachments/assets/5b6a0af5-c0cc-4821-86b1-4fa2962da171" alt="Nitpicker Logo" width="150" />
    <h1>Nitpicker</h1>
 </div>
 
