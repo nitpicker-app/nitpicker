@@ -27,7 +27,7 @@ struct APISettingsView: View {
 
             SecureField("Enter your API key", text: $apiKey)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.vertical, 8)
+                .padding(.horizontal, 10)
 
             Button("Save") {
                 do {
@@ -77,10 +77,10 @@ struct APISettingsView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 340, height: 320)
+        .frame(width: 360, height: 360)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .cornerRadius(20)
+                .cornerRadius(16)
         )
     }
 }

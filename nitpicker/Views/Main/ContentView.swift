@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-// SwiftData is not used in this file
 import Combine
 
 struct ContentView: View {
@@ -46,10 +45,10 @@ struct ContentView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 300, height: 180)
+        .frame(width: 360, height: 240)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .cornerRadius(20)
+                .cornerRadius(16)
         )
     }
 }

@@ -47,10 +47,11 @@ struct AboutView: View {
             }
             .buttonStyle(LinkButtonStyle())
         }
-        .frame(width: 340, height: 360.0)
+        .padding()
+        .frame(width: 360, height: 360)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .cornerRadius(20)
+                .cornerRadius(16)
         )
     }
 }

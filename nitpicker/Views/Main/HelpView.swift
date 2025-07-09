@@ -62,10 +62,10 @@ public struct HelpView: View {
             }
         }
         .padding()
-        .frame(width: 380, height: 350)
+        .frame(width: 360, height: 360)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .cornerRadius(20)
+                .cornerRadius(16)
         )
     }
 }
