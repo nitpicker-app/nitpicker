@@ -10,9 +10,8 @@ import Foundation
 class OpenAIService {
     static let shared = OpenAIService()
     
-    // Get API key from UserDefaults or use a placeholder
     private var apiKey: String {
-        return UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
+        return KeychainService.shared.getAPIKey() ?? ""
     }
 
     func correctGrammar(text: String, completion: @escaping (String) -> Void) {
@@ -81,4 +80,3 @@ class OpenAIService {
         }.resume()
     }
 }
-
