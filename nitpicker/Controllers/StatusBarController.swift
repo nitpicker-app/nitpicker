@@ -4,10 +4,17 @@ import SwiftUI
 class StatusBarController: NSObject, NSWindowDelegate {
     private var statusItem: NSStatusItem
     private var popover = NSPopover()
-    var apiSettingsWindowController: NSWindowController?
-    var aboutWindowController: NSWindowController?
-    var helpWindowController: NSWindowController?
+    private var mainWindowController: NSWindowController?
     private var contentViewModel: ContentViewModel
+    
+    // Current view type to track which view is active
+    enum ViewType {
+        case apiSettings
+        case about
+        case help
+    }
+    
+    private var currentViewType: ViewType?
 
     init(contentView: ContentView) {
         statusItem = NSStatusBar.system.statusItem(
@@ -29,7 +36,7 @@ class StatusBarController: NSObject, NSWindowDelegate {
             // Create the image with a specific symbol configuration for proper sizing
             let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
             button.image = NSImage(
-                systemSymbolName: "character.cursor.ibeam", 
+                systemSymbolName: "character.cursor.ibeam",
                 accessibilityDescription: nil
             )?.withSymbolConfiguration(config)
             
@@ -97,57 +104,73 @@ class StatusBarController: NSObject, NSWindowDelegate {
 
     private func createStyledWindow(
         width: CGFloat,
-        height: CGFloat,
-        contentView: NSViewController
+        height: CGFloat
     ) -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
-            styleMask: [.borderless, .closable, .resizable, .titled],
+            styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false
         )
 
         window.backgroundColor = .clear
         window.titlebarAppearsTransparent = true
-        window.isOpaque = false
+        window.isOpaque = true
         window.hasShadow = true
-        window.contentViewController = contentView
         window.center()
         window.delegate = self
+        window.title = "Nitpicker"
 
         return window
     }
-
-    private func createAndShowWindow<T: View>(
-        size: NSSize,
-        rootView: T,
-        windowController: inout NSWindowController?
-    ) {
-        let hostingController = NSHostingController(rootView: rootView)
-        let window = createStyledWindow(
-            width: size.width,
-            height: size.height,
-            contentView: hostingController
-        )
-        windowController = NSWindowController(window: window)
-        windowController?.showWindow(nil)
+    
+    private func showMainWindow(viewType: ViewType) {
+        // Create window if it doesn't exist or show existing window
+        if mainWindowController == nil {
+            let window = createStyledWindow(width: 400, height: 380)
+            mainWindowController = NSWindowController(window: window)
+        }
+        
+        // Update content based on selection
+        updateWindowContent(for: viewType)
+        
+        // Show window and focus app
+        mainWindowController?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    private func updateWindowContent(for viewType: ViewType) {
+        guard let window = mainWindowController?.window else { return }
+        
+        // Create appropriate view based on selection
+        let hostingController: NSHostingController<AnyView>
+        
+        switch viewType {
+        case .apiSettings:
+            hostingController = NSHostingController(rootView: AnyView(APISettingsView()))
+            window.title = "API Settings"
+            window.setContentSize(NSSize(width: 340, height: 320))
+        case .about:
+            hostingController = NSHostingController(rootView: AnyView(AboutView()))
+            window.title = "About Nitpicker"
+            window.setContentSize(NSSize(width: 340, height: 320))
+        case .help:
+            hostingController = NSHostingController(rootView: AnyView(HelpView()))
+            window.title = "Help"
+            window.setContentSize(NSSize(width: 400, height: 380))
+        }
+        
+        // Update current view type
+        self.currentViewType = viewType
+        
+        // Update window content
+        window.contentViewController = hostingController
     }
 
     // MARK: - Action Handlers
 
     @objc func showAPISettings() {
-        if apiSettingsWindowController == nil {
-            let apiKeyView = APISettingsView()
-            createAndShowWindow(
-                size: NSSize(width: 340, height: 320),
-                rootView: apiKeyView,
-                windowController: &apiSettingsWindowController
-            )
-        } else {
-            apiSettingsWindowController?.showWindow(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        showMainWindow(viewType: .apiSettings)
     }
 
     @objc private func handleStatusItemClick(_ sender: Any?) {
@@ -179,34 +202,11 @@ class StatusBarController: NSObject, NSWindowDelegate {
     }
 
     @objc func showAbout() {
-        if aboutWindowController == nil {
-            let about = AboutView()
-            createAndShowWindow(
-                size: NSSize(width: 340, height: 320),
-                rootView: about,
-                windowController: &aboutWindowController
-            )
-        } else {
-            aboutWindowController?.showWindow(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        showMainWindow(viewType: .about)
     }
 
     @objc func showHelp() {
-        if helpWindowController == nil {
-            let helpContent = HelpView()
-            createAndShowWindow(
-                size: NSSize(width: 400, height: 380),
-                rootView: helpContent,
-                windowController: &helpWindowController
-            )
-
-            // Set window as movable if needed
-            helpWindowController?.window?.isMovableByWindowBackground = true
-        } else {
-            helpWindowController?.showWindow(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        showMainWindow(viewType: .help)
     }
 
     // MARK: - NSWindowDelegate
@@ -214,13 +214,9 @@ class StatusBarController: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
 
-        // Determine which window is closing and clean up accordingly
-        if window == aboutWindowController?.window {
-            aboutWindowController = nil
-        } else if window == helpWindowController?.window {
-            helpWindowController = nil
-        } else if window == apiSettingsWindowController?.window {
-            apiSettingsWindowController = nil
+        // Reset window controller when window is closed
+        if window == mainWindowController?.window {
+            mainWindowController = nil
         }
     }
 }
