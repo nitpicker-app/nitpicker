@@ -119,7 +119,6 @@ class StatusBarController: NSObject, NSWindowDelegate {
         window.hasShadow = true
         window.center()
         window.delegate = self
-        window.title = "Nitpicker"
 
         return window
     }
@@ -148,15 +147,12 @@ class StatusBarController: NSObject, NSWindowDelegate {
         switch viewType {
         case .apiSettings:
             hostingController = NSHostingController(rootView: AnyView(APISettingsView()))
-            window.title = "API Settings"
             window.setContentSize(NSSize(width: 340, height: 320))
         case .about:
             hostingController = NSHostingController(rootView: AnyView(AboutView()))
-            window.title = "About Nitpicker"
             window.setContentSize(NSSize(width: 340, height: 320))
         case .help:
             hostingController = NSHostingController(rootView: AnyView(HelpView()))
-            window.title = "Help"
             window.setContentSize(NSSize(width: 400, height: 380))
         }
         

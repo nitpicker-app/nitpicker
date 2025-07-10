@@ -10,6 +10,16 @@ import SwiftUI
 struct AboutView: View {
 
     @Environment(\.dismiss) private var dismiss
+    // Get the app version from the main bundle
+    private var appVersion: String {
+        let version =
+            Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+            ?? "1.0"
+        let build =
+            Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "Version \(version) (\(build))"
+    }
+    
     var body: some View {
         VStack(spacing: 16) {
             if let appIcon = NSApp.applicationIconImage {
@@ -22,7 +32,7 @@ struct AboutView: View {
             Text("Nitpicker")
                 .font(.system(size: 16, weight: .semibold))
 
-            Text("Version 1.0")
+            Text(appVersion)
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
 
