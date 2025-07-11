@@ -9,7 +9,7 @@ import Foundation
 
 class OpenAIService {
     static let shared = OpenAIService()
-    
+
     private var apiKey: String {
         return KeychainService.shared.getAPIKey() ?? ""
     }
@@ -18,16 +18,30 @@ class OpenAIService {
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue(
+            "Bearer \(apiKey)",
+            forHTTPHeaderField: "Authorization"
+        )
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = [
             "model": "gpt-4o-mini",
             "messages": [
-                ["role": "system", "content": "You are a helpful assistant that corrects grammar and spelling mistakes in text. Please review the following text and correct all grammar, spelling, and punctuation mistakes. Maintain the original meaning and language of the text. If the text is in a language other than English, please correct it according to that language’s grammar and spelling rules. Do not translate. Add appropriate punctuation and capitalization where necessary."],
-                ["role": "user", "content": text]
+                [
+                    "role": "system",
+                    "content": """
+                    You are a warm, meticulous editor. When I give you a passage, gently polish its grammar, spelling, punctuation, and flow so it reads naturally to a human reader. Keep the writer’s original voice, tone, and intent; make only the fixes needed for clarity and correctness, avoiding robotic or overly formal phrasing. 
+
+                    If the passage is in a language other than English, apply the same light-touch corrections using that language’s rules—never translate or add new ideas.  
+                    Return **only** the improved tex̛t.
+                    """,
+                ],
+                [
+                    "role": "user",
+                    "content": text,  // just pass the raw text; no wrapper needed
+                ],
             ],
-            "temperature": 0.2
+            "temperature": 0.2,
         ]
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
@@ -41,32 +55,39 @@ class OpenAIService {
                 }
                 return
             }
-            
+
             // Check HTTP response
             if let httpResponse = response as? HTTPURLResponse {
                 print("OpenAI API Status Code: \(httpResponse.statusCode)")
-                
+
                 if httpResponse.statusCode != 200 {
-                    if let data = data, let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let data = data,
+                        let errorJson = try? JSONSerialization.jsonObject(
+                            with: data
+                        ) as? [String: Any]
+                    {
                         print("OpenAI API Error: \(errorJson)")
                     }
-                    
+
                     DispatchQueue.main.async {
                         completion(text)
                     }
                     return
                 }
             }
-            
+
             guard let data = data,
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let choices = json["choices"] as? [[String: Any]],
-                  let message = choices.first?["message"] as? [String: Any],
-                  let content = message["content"] as? String
+                let json = try? JSONSerialization.jsonObject(with: data)
+                    as? [String: Any],
+                let choices = json["choices"] as? [[String: Any]],
+                let message = choices.first?["message"] as? [String: Any],
+                let content = message["content"] as? String
             else {
                 print("OpenAI API: Failed to parse response")
                 if let data = data {
-                    print("Response data: \(String(data: data, encoding: .utf8) ?? "Unable to decode response")")
+                    print(
+                        "Response data: \(String(data: data, encoding: .utf8) ?? "Unable to decode response")"
+                    )
                 }
                 DispatchQueue.main.async {
                     completion(text)
@@ -75,7 +96,9 @@ class OpenAIService {
             }
 
             DispatchQueue.main.async {
-                completion(content.trimmingCharacters(in: .whitespacesAndNewlines))
+                completion(
+                    content.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
             }
         }.resume()
     }
