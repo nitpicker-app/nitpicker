@@ -50,7 +50,7 @@ struct AboutView: View {
 
             Button("Website") {
                 if let url = URL(
-                    string: "https://github.com/nipicker-app/nitpicker"
+                    string: "https://github.com/nitpicker-app/nitpicker"
                 ) {
                     NSWorkspace.shared.open(url)
                 }

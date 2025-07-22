@@ -48,7 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Register hotkey for grammar correction
         HotKeyManager.shared.registerHotKey { [weak self] in
-            print("HotKey triggered: Cmd+Shift+G")
+            print("HotKey triggered: Cmd+Shift+B")
             self?.viewModel.correctSelectedText()
         }
     }
