@@ -7,14 +7,14 @@
 
 import Foundation
 
-class OpenAIService {
+class OpenAIService: TextCorrectionService {
     static let shared = OpenAIService()
 
     private var apiKey: String {
         return KeychainService.shared.getAPIKey() ?? ""
     }
 
-    func correctGrammar(text: String, completion: @escaping (String) -> Void) {
+    func correctGrammar(text: String, completion: @escaping (String) -> Void) async {
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -103,3 +103,5 @@ class OpenAIService {
         }.resume()
     }
 }
+
+

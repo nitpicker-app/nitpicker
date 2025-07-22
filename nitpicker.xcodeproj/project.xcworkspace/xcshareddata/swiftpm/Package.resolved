@@ -1,5 +1,5 @@
 {
-  "originHash" : "01f286328852d165d87f8fbee99b01f9c2c936f57ac234f76396f74f9d2496dd",
+  "originHash" : "48fe1d976b52c41509814315a629373afcfb9204e6ff7c141047ed452c5e6df1",
   "pins" : [
     {
       "identity" : "hotkey",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "a3cf605d7a96f6ff50e04fcb6dea6e2613cfcbe4"
+      }
+    },
+    {
+      "identity" : "ollama-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/loopwork/ollama-swift.git",
+      "state" : {
+        "revision" : "5c913312ebbccc9ad958ae0ec06e51fede0022ad",
+        "version" : "1.8.0"
       }
     }
   ],

@@ -27,14 +27,16 @@ class ContentViewModel: ObservableObject {
         
         isLoading = true
 
-        OpenAIService.shared.correctGrammar(text: selectedText) { [weak self] corrected in
-            print("MainViewModel: Received corrected text from OpenAI.")
-            print("MainViewModel: Corrected text: \(String(corrected.prefix(50)))...")
-            DispatchQueue.main.async {
-                self?.lastCorrection = ClippedText(originalText: selectedText, correctedText: corrected)
-                print("MainViewModel: Replacing selected text with corrected version")
-                ClipboardHelper.replaceSelectedText(with: corrected)
-                self?.isLoading = false
+        Task {
+            await TextCorrectionServiceFactory.current.correctGrammar(text: selectedText) { [weak self] corrected in
+                print("ContentViewModel: Received corrected text from service.")
+                print("ContentViewModel: Corrected text: \(String(corrected.prefix(50)))...")
+                DispatchQueue.main.async {
+                    self?.lastCorrection = ClippedText(originalText: selectedText, correctedText: corrected)
+                    print("ContentViewModel: Replacing selected text with corrected version")
+                    ClipboardHelper.replaceSelectedText(with: corrected)
+                    self?.isLoading = false
+                }
             }
         }
     }
