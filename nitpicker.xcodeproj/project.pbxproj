@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		27222B552E1BDF520002C713 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 27222B542E1BDF520002C713 /* HotKey */; };
-		278EBEFA2E2FB3010006D8E1 /* Ollama in Frameworks */ = {isa = PBXBuildFile; productRef = 278EBEF92E2FB3010006D8E1 /* Ollama */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,7 +56,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				278EBEFA2E2FB3010006D8E1 /* Ollama in Frameworks */,
 				27222B552E1BDF520002C713 /* HotKey in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -120,7 +118,6 @@
 			name = nitpicker;
 			packageProductDependencies = (
 				27222B542E1BDF520002C713 /* HotKey */,
-				278EBEF92E2FB3010006D8E1 /* Ollama */,
 			);
 			productName = nitpicker;
 			productReference = 273BB1892E1BCEFB002A75C4 /* nitpicker.app */;
@@ -206,7 +203,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				27222B532E1BDF520002C713 /* XCRemoteSwiftPackageReference "HotKey" */,
-				278EBEF82E2FB1540006D8E1 /* XCRemoteSwiftPackageReference "ollama-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 273BB18A2E1BCEFB002A75C4 /* Products */;
@@ -578,14 +574,6 @@
 				kind = branch;
 			};
 		};
-		278EBEF82E2FB1540006D8E1 /* XCRemoteSwiftPackageReference "ollama-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/loopwork/ollama-swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.8.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -593,11 +581,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 27222B532E1BDF520002C713 /* XCRemoteSwiftPackageReference "HotKey" */;
 			productName = HotKey;
-		};
-		278EBEF92E2FB3010006D8E1 /* Ollama */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 278EBEF82E2FB1540006D8E1 /* XCRemoteSwiftPackageReference "ollama-swift" */;
-			productName = Ollama;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

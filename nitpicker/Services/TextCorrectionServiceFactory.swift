@@ -13,7 +13,6 @@ class TextCorrectionServiceFactory {
     /// Available text correction service types
     enum ServiceType {
         case openAI
-        case ollama
     }
     
     /// Current active service type
@@ -21,12 +20,7 @@ class TextCorrectionServiceFactory {
     
     /// Get the currently configured text correction service
     static var current: TextCorrectionService {
-        switch currentServiceType {
-        case .openAI:
-            return OpenAIService.shared
-        case .ollama:
-            return OllamaService.shared
-        }
+        return OpenAIService.shared
     }
     
     /// Switch to a different service type
@@ -40,32 +34,17 @@ class TextCorrectionServiceFactory {
     /// - Parameter serviceType: The service type to get
     /// - Returns: The requested service instance
     static func service(for serviceType: ServiceType) -> TextCorrectionService {
-        switch serviceType {
-        case .openAI:
-            return OpenAIService.shared
-        case .ollama:
-            return OllamaService.shared
-        }
+        return OpenAIService.shared
     }
 }
 
 // MARK: - Service Type Extensions
 extension TextCorrectionServiceFactory.ServiceType {
     var displayName: String {
-        switch self {
-        case .openAI:
-            return "OpenAI"
-        case .ollama:
-            return "Ollama (Local)"
-        }
+        return "OpenAI"
     }
     
     var description: String {
-        switch self {
-        case .openAI:
-            return "Cloud-based AI service using OpenAI's GPT models"
-        case .ollama:
-            return "Local AI service running on your machine"
-        }
+        return "Cloud-based AI service using OpenAI's GPT models"
     }
 }
