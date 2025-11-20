@@ -61,7 +61,7 @@ class OpenAIService: TextCorrectionService {
                 ],
                 [
                     "role": "user",
-                    "content": text,  // just pass the raw text; no wrapper needed
+                    "content": "User Input:\n" + text,
                 ],
             ],
             "temperature": 0.2,
