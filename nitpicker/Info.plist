@@ -4,6 +4,8 @@
 <dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Nitpicker needs permission to send keyboard commands to copy and paste text for grammar correction.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Nitpicker needs to capture screenshots of your active screen to understand the context (emails, documents, code, etc.) in which you're writing, enabling more accurate and context-aware grammar corrections.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
