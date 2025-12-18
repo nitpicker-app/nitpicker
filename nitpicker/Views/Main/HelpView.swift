@@ -24,14 +24,31 @@ public struct HelpView: View {
                             .font(.system(size: 13, weight: .semibold))
 
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("1. Select text anywhere in macOS")
+                            Text("• Select text anywhere in macOS")
                                 .font(.system(size: 13))
-                            Text("2. Press Cmd+Shift+B to correct grammar")
+                            Text("• Press Cmd+Shift+B to correct grammar")
                                 .font(.system(size: 13))
                             Text(
-                                "3. Nitpicker will replace the text automatically"
+                                "• Nitpicker will replace the text automatically"
                             )
                             .font(.system(size: 13))
+                        }
+                        .foregroundColor(.secondary)
+                    }
+                    
+                    Group {
+                        Text("Voice Dictation")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("• Press Cmd+Shift+D to start dictation")
+                                .font(.system(size: 13))
+                            Text("• Speak your text into the microphone")
+                                .font(.system(size: 13))
+                            Text("• Press Cmd+Shift+D again to stop and transcribe")
+                                .font(.system(size: 13))
+                            Text("• The transcribed text will be corrected and pasted")
+                                .font(.system(size: 13))
                         }
                         .foregroundColor(.secondary)
                     }
@@ -52,7 +69,7 @@ public struct HelpView: View {
                             .font(.system(size: 13, weight: .semibold))
 
                         Text(
-                            "The app requires accessibility permissions to read and replace text. You can grant these in System Settings → Privacy & Security → Accessibility."
+                            "The app requires accessibility permissions to read and replace text, and microphone access for dictation. You can grant these in System Settings → Privacy & Security."
                         )
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
@@ -62,7 +79,7 @@ public struct HelpView: View {
             }
         }
         .padding()
-        .frame(width: 360, height: 360)
+        .frame(width: 400, height: 460)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                 .cornerRadius(16)

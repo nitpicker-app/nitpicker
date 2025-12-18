@@ -47,9 +47,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupApplicationMenu()
 
         // Register hotkey for grammar correction
-        HotKeyManager.shared.registerHotKey { [weak self] in
+        HotKeyManager.shared.registerCorrectionHotKey { [weak self] in
             print("HotKey triggered: Cmd+Shift+B")
             self?.viewModel.correctSelectedText()
+        }
+        
+        // Register hotkey for dictation
+        HotKeyManager.shared.registerDictationHotKey { [weak self] in
+            print("HotKey triggered: Cmd+Shift+D")
+            self?.handleDictationHotKey()
         }
     }
 
@@ -156,6 +162,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showHelp() {
         statusBarController?.showHelp()
+    }
+    
+    func handleDictationHotKey() {
+        let dictationService = DictationService.shared
+        
+        if dictationService.isRecording {
+            // If already recording, stop and transcribe
+            viewModel.stopDictation()
+        } else {
+            // Start new recording
+            viewModel.startDictation()
+        }
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {

@@ -10,6 +10,7 @@ import Combine
 
 struct ContentView: View {
     @ObservedObject var viewModel: ContentViewModel
+    @StateObject private var dictationService = DictationService.shared
     
     var body: some View {
         VStack(spacing: 16) {
@@ -26,6 +27,31 @@ struct ContentView: View {
                 if viewModel.isLoading {
                     ProgressView("Correcting...")
                         .controlSize(.small)
+                } else if dictationService.isRecording {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                            Text("Recording...")
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        
+                        Button("Stop & Transcribe") {
+                            viewModel.stopDictation()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        
+                        Button("Cancel") {
+                            dictationService.cancelRecording()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                } else if dictationService.isTranscribing {
+                    ProgressView("Transcribing...")
+                        .controlSize(.small)
                 } else if let correction = viewModel.lastCorrection {
                     Text("✅ Grammar fixed")
                         .font(.system(size: 13))
@@ -35,9 +61,25 @@ struct ContentView: View {
                         .lineLimit(3)
                         .multilineTextAlignment(.center)
                 } else {
-                    Text("Press Cmd + Shift + B to correct text")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
+                    VStack(spacing: 8) {
+                        Text("Press Cmd + Shift + B to correct text")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                        
+                        Divider()
+                            .padding(.vertical, 4)
+                        
+                        Button(action: {
+                            viewModel.startDictation()
+                        }) {
+                            HStack {
+                                Image(systemName: "mic.fill")
+                                Text("Start Dictation")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                    }
                 }
             }
             .padding()
@@ -45,7 +87,7 @@ struct ContentView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 360, height: 240)
+        .frame(width: 360, height: 280)
         .background(
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                 .cornerRadius(16)
@@ -56,3 +98,4 @@ struct ContentView: View {
 #Preview {
     ContentView(viewModel: ContentViewModel())
 }
+

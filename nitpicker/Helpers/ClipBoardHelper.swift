@@ -119,4 +119,48 @@ class ClipboardHelper {
         
         print("ClipboardHelper: Text replacement complete")
     }
+    
+    /// Type text character by character in real-time
+    static func typeText(_ text: String) {
+        print("ClipboardHelper: Typing text: '\(text)'")
+        
+        // Check for accessibility permissions
+        if !AccessibilityPermissionManager.shared.hasAccessibilityPermissions {
+            print("ClipboardHelper: ⚠️ Accessibility permissions not granted")
+            AccessibilityPermissionManager.shared.checkAndRequestAccessibilityPermissions(showUI: true)
+            return
+        }
+        
+        // Create event source
+        let src = CGEventSource(stateID: .combinedSessionState)
+        guard let source = src else {
+            print("ClipboardHelper: ⚠️ Failed to create event source")
+            return
+        }
+        
+        // Type each character with a small delay for natural typing
+        for char in text {
+            let charString = String(char)
+            
+            // Create a keyboard event for typing the character
+            if let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
+               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) {
+                
+                // Convert to UTF-16 (UniChar array) for CGEvent
+                let utf16Chars = Array(charString.utf16)
+                keyDown.keyboardSetUnicodeString(stringLength: utf16Chars.count, unicodeString: utf16Chars)
+                keyUp.keyboardSetUnicodeString(stringLength: utf16Chars.count, unicodeString: utf16Chars)
+                
+                // Post the events
+                keyDown.post(tap: .cghidEventTap)
+                usleep(5_000) // 5ms delay between key down and up
+                keyUp.post(tap: .cghidEventTap)
+                
+                // Small delay between characters for natural typing
+                usleep(20_000) // 20ms between characters
+            }
+        }
+        
+        print("ClipboardHelper: Finished typing")
+    }
 }

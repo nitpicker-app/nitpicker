@@ -4,6 +4,8 @@
 <dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Nitpicker needs permission to send keyboard commands to copy and paste text for grammar correction.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Nitpicker needs access to the microphone for voice dictation and transcription.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>

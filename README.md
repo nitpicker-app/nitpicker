@@ -8,9 +8,12 @@ A macOS menubar application that helps you correct grammar in any text on your M
 ## Features
 
 - 🔤 Grammar correction for any selected text across macOS
-- 🚀 Fast correction with a keyboard shortcut (Cmd+Shift+B)
-- 🧠 AI-powered using OpenAI's GPT models
-- 🔒 Privacy-focused: Local API key storage
+- 🎤 Voice dictation with local AI-powered transcription
+- 🚀 Fast correction with keyboard shortcuts
+  - `Cmd+Shift+B` - Correct selected text
+  - `Cmd+Shift+D` - Start/stop voice dictation
+- 🧠 AI-powered using OpenAI's GPT models and FluidAudio
+- 🔒 Privacy-focused: Local API key storage and on-device transcription
 - 👻 Unobtrusive menubar-only interface
 
 ## Requirements
@@ -42,15 +45,25 @@ A macOS menubar application that helps you correct grammar in any text on your M
 3. Wait for the correction to complete.
 4. The corrected text will automatically replace the selected text.
 
-Nitpicker uses OpenAI's GPT-4o-mini model for fast, accurate corrections and requires an internet connection.
+### Voice Dictation
+
+1. Press `Cmd+Shift+D` or click the "Start Dictation" button in the menubar.
+2. Speak your text into the microphone.
+3. Press `Cmd+Shift+D` again to stop recording.
+4. Wait for transcription and grammar correction.
+5. The corrected text will be automatically pasted.
+
+Nitpicker uses:
+- OpenAI's GPT-4o-mini for grammar corrections (requires internet)
+- FluidAudio's Parakeet ASR for local, private speech-to-text (works offline)
 
 ## Accessibility Permissions
 
-Nitpicker requires accessibility permissions to:
-- Read text you've selected.
-- Replace text with corrected versions.
+Nitpicker requires the following permissions:
+- **Accessibility**: To read and replace text you've selected.
+- **Microphone**: For voice dictation (optional).
 
-You can grant these permissions in System Settings → Privacy & Security → Accessibility.
+You can grant these permissions in System Settings → Privacy & Security.
 
 ## Development
 
@@ -61,6 +74,7 @@ You can grant these permissions in System Settings → Privacy & Security → Ac
 - **Helpers/**: Utility classes for accessibility and clipboard operations.
 - **Services/**: 
   - **OpenAIService.swift**: Cloud-based AI text correction.
+  - **DictationService.swift**: Voice recording and transcription using FluidAudio.
   - **TextCorrectionServiceFactory.swift**: Service management.
 - **Views/**: SwiftUI views for settings and UI.
 - **Models/**: Data models.
@@ -68,6 +82,7 @@ You can grant these permissions in System Settings → Privacy & Security → Ac
 ### Dependencies
 
 - [HotKey](https://github.com/soffes/HotKey): Global keyboard shortcut handling.
+- [FluidAudio](https://github.com/FluidInference/FluidAudio): Local speech recognition and transcription.
 
 ### Building from Source
 
@@ -80,7 +95,12 @@ You can grant these permissions in System Settings → Privacy & Security → Ac
 
 ## Privacy
 
-Nitpicker stores your API key locally in the Keychain and only sends the selected text to OpenAI's API for correction. No other data is collected or transmitted.
+Nitpicker prioritizes your privacy:
+- API key is stored locally in the Keychain
+- Only selected text is sent to OpenAI's API for correction
+- Voice dictation is processed entirely on-device using FluidAudio
+- No audio recordings are stored or transmitted
+- No usage data is collected or transmitted
 
 ## Latest Updates
 
