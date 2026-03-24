@@ -9,21 +9,25 @@ import SwiftUI
 import ServiceManagement
 
 struct APISettingsView: View {
+    @ObservedObject private var modeManager = ModeManager.shared
     @State private var apiKey: String = KeychainService.shared.getAPIKey() ?? ""
     @State private var showSaved = false
     @State private var errorMessage: String?
     @State private var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled
     @State private var selectedModel: String = UserDefaults.standard.string(forKey: "selectedModel") ?? "gpt-5.4-mini"
+    @State private var editingMode: CorrectionMode?
+    @State private var isAddingMode = false
+    @State private var draftMode = CorrectionMode(id: "", name: "", systemPrompt: "")
 
     private let models: [(id: String, label: String)] = [
-        ("gpt-5.4",      "GPT-5.4 — Flagship, best intelligence at scale"),
-        ("gpt-5.4-mini", "GPT-5.4 Mini — Strong mini for coding & agents"),
-        ("gpt-5.4-nano", "GPT-5.4 Nano — Cheapest & fastest GPT-5.4"),
-        ("gpt-5-mini",   "GPT-5 Mini — Near-frontier, cost-sensitive"),
-        ("gpt-5-nano",   "GPT-5 Nano — Fastest, most affordable GPT-5"),
-        ("gpt-4.1",      "GPT-4.1 — Smartest non-reasoning model"),
-        ("gpt-4.1-mini", "GPT-4.1 Mini — Smaller, faster GPT-4.1"),
-        ("gpt-4.1-nano", "GPT-4.1 Nano — Fastest, cheapest GPT-4.1"),
+        ("gpt-5.4",      "GPT-5.4"),
+        ("gpt-5.4-mini", "GPT-5.4 Mini"),
+        ("gpt-5.4-nano", "GPT-5.4 Nano"),
+        ("gpt-5-mini",   "GPT-5 Mini"),
+        ("gpt-5-nano",   "GPT-5 Nano"),
+        ("gpt-4.1",      "GPT-4.1"),
+        ("gpt-4.1-mini", "GPT-4.1 Mini"),
+        ("gpt-4.1-nano", "GPT-4.1 Nano"),
     ]
 
     var body: some View {
@@ -58,8 +62,68 @@ struct APISettingsView: View {
                 } footer: {
                     Text("Stored securely in your Keychain.")
                 }
+
+                Section {
+                    if modeManager.customModes.isEmpty {
+                        Text("No custom modes yet.")
+                            .foregroundStyle(.secondary)
+                            .font(.callout)
+                    } else {
+                        ForEach(modeManager.customModes) { mode in
+                            HStack {
+                                Text(mode.name)
+                                Spacer()
+                                Button {
+                                    draftMode = mode
+                                    editingMode = mode
+                                } label: {
+                                    Image(systemName: "pencil")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Edit")
+
+                                Button {
+                                    modeManager.deleteMode(id: mode.id)
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundStyle(.red)
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Delete")
+                            }
+                        }
+                    }
+
+                    Button {
+                        draftMode = CorrectionMode(id: UUID().uuidString, name: "", systemPrompt: "")
+                        isAddingMode = true
+                    } label: {
+                        Label("Add Mode", systemImage: "plus")
+                    }
+                } header: {
+                    Text("Custom Modes")
+                } footer: {
+                    Text("Custom modes appear in the mode picker and use your system prompt.")
+                }
             }
             .formStyle(.grouped)
+            .sheet(isPresented: $isAddingMode) {
+                ModeEditView(mode: $draftMode, title: "New Mode") {
+                    modeManager.addMode(draftMode)
+                    isAddingMode = false
+                } onCancel: {
+                    isAddingMode = false
+                }
+            }
+            .sheet(item: $editingMode) { _ in
+                ModeEditView(mode: $draftMode, title: "Edit Mode") {
+                    modeManager.updateMode(draftMode)
+                    editingMode = nil
+                } onCancel: {
+                    editingMode = nil
+                }
+            }
 
             Divider()
 
@@ -114,6 +178,50 @@ struct APISettingsView: View {
             // Revert the toggle if the system call failed
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
+    }
+}
+
+// MARK: - Mode Edit Sheet
+
+struct ModeEditView: View {
+    @Binding var mode: CorrectionMode
+    let title: String
+    let onSave: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Form {
+                Section("Name") {
+                    TextField("e.g. Friendly, Technical, Summary…", text: $mode.name)
+                }
+                Section {
+                    TextEditor(text: $mode.systemPrompt)
+                        .font(.body)
+                        .frame(minHeight: 120)
+                } header: {
+                    Text("System Prompt")
+                } footer: {
+                    Text("Describe how the AI should transform the selected text.")
+                }
+            }
+            .formStyle(.grouped)
+
+            Divider()
+
+            HStack {
+                Button("Cancel", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(title == "New Mode" ? "Add" : "Save", action: onSave)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(mode.name.trimmingCharacters(in: .whitespaces).isEmpty ||
+                              mode.systemPrompt.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .frame(width: 380, height: 320)
     }
 }
 

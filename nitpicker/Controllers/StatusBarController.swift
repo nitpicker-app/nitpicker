@@ -6,6 +6,7 @@ class StatusBarController: NSObject {
     private let popover = NSPopover()
     private let contentViewModel: ContentViewModel
     private var settingsWindow: NSWindow?
+    private var eventMonitor: Any?
 
     init(viewModel: ContentViewModel) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -30,7 +31,7 @@ class StatusBarController: NSObject {
     }
 
     private func setupPopover() {
-        popover.behavior = .transient
+        popover.behavior = .applicationDefined
         popover.animates = true
         let contentView = ContentView(viewModel: contentViewModel) { [weak self] in
             self?.openSettings()
@@ -52,10 +53,24 @@ class StatusBarController: NSObject {
     private func togglePopover() {
         guard let button = statusItem.button else { return }
         if popover.isShown {
-            popover.performClose(nil)
+            closePopover()
         } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popover.contentViewController?.view.window?.collectionBehavior = [
+                .canJoinAllSpaces, .fullScreenAuxiliary
+            ]
+            eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+                self?.closePopover()
+            }
+        }
+    }
+
+    private func closePopover() {
+        popover.performClose(nil)
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
         }
     }
 
@@ -114,8 +129,8 @@ class StatusBarController: NSObject {
         }
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 280),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 440),
+            styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false
         )
@@ -123,7 +138,8 @@ class StatusBarController: NSObject {
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.contentViewController = NSHostingController(rootView: APISettingsView())
-        window.setContentSize(NSSize(width: 360, height: 280))
+        window.setContentSize(NSSize(width: 380, height: 440))
+        window.minSize = NSSize(width: 360, height: 360)
         window.center()
 
         settingsWindow = window
