@@ -35,9 +35,10 @@ The app has `LSUIElement = true` and `LSBackgroundOnly = true` in `Info.plist`, 
 
 1. ⌘⇧B → `HotKeyManager` fires → `ContentViewModel.correctSelectedText()`
 2. `ClipboardHelper.copySelectedText()` simulates Cmd+C via `CGEvent` to capture the selected text
-3. `TextCorrectionServiceFactory.current` (returns `OpenAIService.shared`) calls OpenAI's `gpt-4o-mini`
+3. `TextCorrectionServiceFactory.current` (returns `OpenAIService.shared`) calls OpenAI's Responses API (`/v1/responses`) with the user-selected model (stored in `UserDefaults` key `selectedModel`, defaulting to `gpt-5.4-mini`)
 4. On completion, `ClipboardHelper.replaceSelectedText()` simulates Cmd+V to paste the result back
-5. `ContentViewModel.correctionStatus` transitions: `.idle` → `.correcting` → `.done(corrected:)`, then resets to `.idle` after 5 seconds
+5. `ContentViewModel.correctionStatus` transitions: `.idle` → `.correcting` → `.done(corrected:)` (resets after 5s) or `.failed` (resets after 4s)
+6. Successful corrections are prepended to `ContentViewModel.history` (capped at 10 entries)
 
 `ClipboardHelper` uses raw `CGEvent` key simulation (virtual key 8 = C, 9 = V) with `usleep` delays — accessibility permissions are required.
 
