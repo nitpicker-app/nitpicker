@@ -22,6 +22,7 @@ struct CorrectionEntry: Identifiable, Codable {
     }
 }
 
+@MainActor
 class ContentViewModel: ObservableObject {
 
     enum CorrectionStatus: Equatable {
@@ -79,9 +80,10 @@ class ContentViewModel: ObservableObject {
         Task {
             await TextCorrectionServiceFactory.current.correctGrammar(text: selectedText) { [weak self] corrected in
                 DispatchQueue.main.async {
+                    guard let self else { return }
                     guard let corrected else {
-                        self?.correctionStatus = .failed
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                        self.correctionStatus = .failed
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
                             if case .failed = self?.correctionStatus ?? .idle {
                                 self?.correctionStatus = .idle
                             }
@@ -89,13 +91,13 @@ class ContentViewModel: ObservableObject {
                         return
                     }
                     ClipboardHelper.replaceSelectedText(with: corrected)
-                    self?.correctionStatus = .done(corrected: corrected)
+                    self.correctionStatus = .done(corrected: corrected)
                     let entry = CorrectionEntry(original: selectedText, corrected: corrected, date: Date())
-                    self?.history.insert(entry, at: 0)
-                    if (self?.history.count ?? 0) > 10 {
-                        self?.history = Array(self!.history.prefix(10))
+                    self.history.insert(entry, at: 0)
+                    if self.history.count > 10 {
+                        self.history = Array(self.history.prefix(10))
                     }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
                         if case .done = self?.correctionStatus ?? .idle {
                             self?.correctionStatus = .idle
                         }

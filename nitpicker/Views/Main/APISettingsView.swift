@@ -38,7 +38,7 @@ struct APISettingsView: View {
         Form {
             Section {
                 Toggle("Launch at Login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { newValue in
+                    .onChange(of: launchAtLogin) { _, newValue in
                         updateLaunchAtLogin(newValue)
                     }
             } header: {
@@ -51,7 +51,7 @@ struct APISettingsView: View {
                         Text(model.label).tag(model.id)
                     }
                 }
-                .onChange(of: selectedModel) { newValue in
+                .onChange(of: selectedModel) { _, newValue in
                     UserDefaults.standard.set(newValue, forKey: "selectedModel")
                 }
             } header: {
@@ -62,7 +62,7 @@ struct APISettingsView: View {
                 SecureField("sk-...", text: $apiKey)
                     .focused($apiKeyFocused)
                     .onSubmit { saveAPIKey() }
-                    .onChange(of: apiKeyFocused) { focused in
+                    .onChange(of: apiKeyFocused) { _, focused in
                         if !focused { saveAPIKey() }
                     }
             } header: {

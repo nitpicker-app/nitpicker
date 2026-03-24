@@ -2,6 +2,7 @@ import Cocoa
 import SwiftUI
 import Combine
 
+@MainActor
 class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
     private let popover = NSPopover()
@@ -176,7 +177,9 @@ class StatusBarController: NSObject {
             keyEquivalent: "q"
         ))
 
-        statusItem.popUpMenu(menu)
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
     }
 
     // MARK: - Actions

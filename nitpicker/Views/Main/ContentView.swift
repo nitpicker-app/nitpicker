@@ -19,19 +19,29 @@ struct ContentView: View {
     var onOpenHelp: () -> Void = {}
     @StateObject private var historyState = HistoryState()
 
+    private var isCorrecting: Bool {
+        if case .correcting = viewModel.correctionStatus { return true }
+        return false
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
             if modeManager.activeModeID == "translate" {
                 translateLanguagePicker
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 Divider()
+                    .transition(.opacity)
             }
             mainContent
             Divider()
             footer
         }
         .frame(width: 280)
+        // Scoped animations: each fires only when its value changes
+        .animation(.easeInOut(duration: 0.22), value: modeManager.activeModeID)
+        .animation(.easeInOut(duration: 0.22), value: viewModel.history.isEmpty)
     }
 
     // MARK: - Header
@@ -41,8 +51,10 @@ struct ContentView: View {
             Text("Nitpicker")
                 .font(.headline)
             Spacer()
-            if case .correcting = viewModel.correctionStatus {
-                ProgressView().controlSize(.small)
+            if isCorrecting {
+                ProgressView()
+                    .controlSize(.small)
+                    .transition(.scale(scale: 0.7).combined(with: .opacity))
             }
             modePicker
             Button { onOpenSettings() } label: {
@@ -54,6 +66,7 @@ struct ContentView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+        .animation(.easeInOut(duration: 0.2), value: isCorrecting)
     }
 
     private var modePicker: some View {
@@ -110,8 +123,12 @@ struct ContentView: View {
     private var mainContent: some View {
         if viewModel.history.isEmpty {
             emptyState
+                .transition(.opacity)
+                .id("empty")
         } else {
             historyList
+                .transition(.opacity)
+                .id("history")
         }
     }
 
@@ -146,15 +163,21 @@ struct ContentView: View {
 
     private var historyList: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(spacing: 0) {
+            VStack(spacing: 0) {
                 ForEach(viewModel.history) { entry in
                     historyRow(entry)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal: .opacity
+                        ))
                     if entry.id != viewModel.history.last?.id {
                         Divider()
                             .padding(.leading, 14)
+                            .transition(.opacity)
                     }
                 }
             }
+            .animation(.spring(duration: 0.32, bounce: 0.12), value: viewModel.history.map(\.id))
         }
         .frame(maxHeight: 320)
     }
@@ -172,15 +195,18 @@ struct ContentView: View {
 
             Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
                 .imageScale(.small)
-                .foregroundStyle(isCopied ? .green : .secondary)
+                .foregroundStyle(isCopied ? Color.green : Color.secondary)
                 .frame(width: 16, height: 16)
+                .scaleEffect(isCopied ? 0.85 : 1.0)
+                .contentTransition(.symbolEffect(.replace))
                 .opacity(isHovered || isCopied ? 1 : 0)
+                .animation(.spring(duration: 0.3, bounce: 0.3), value: isCopied)
                 .animation(.easeInOut(duration: 0.12), value: isHovered)
-                .animation(.easeInOut(duration: 0.15), value: isCopied)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
         .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
+        .animation(.easeInOut(duration: 0.1), value: isHovered)
         .contentShape(Rectangle())
         .onHover { historyState.hoveredID = $0 ? entry.id : nil }
         .onTapGesture { copyToClipboard(entry.corrected, id: entry.id) }
@@ -204,6 +230,7 @@ struct ContentView: View {
                 .buttonStyle(.borderless)
                 .foregroundStyle(.secondary)
                 .font(.caption)
+                .transition(.move(edge: .leading).combined(with: .opacity))
             }
             Spacer()
             Button("Help") { onOpenHelp() }
@@ -213,6 +240,7 @@ struct ContentView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.history.isEmpty)
     }
 
     // MARK: - Actions
@@ -221,9 +249,9 @@ struct ContentView: View {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         guard let id else { return }
-        withAnimation(.easeInOut(duration: 0.15)) { historyState.copiedID = id }
+        withAnimation { historyState.copiedID = id }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation {
                 if self.historyState.copiedID == id { self.historyState.copiedID = nil }
             }
         }
