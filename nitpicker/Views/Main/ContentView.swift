@@ -12,6 +12,7 @@ struct ContentView: View {
     @ObservedObject var viewModel: ContentViewModel
     @ObservedObject private var modeManager = ModeManager.shared
     var onOpenSettings: () -> Void = {}
+    var onOpenHelp: () -> Void = {}
     @State private var copiedID: UUID?
     @State private var hoveredID: UUID?
     @State private var expandedID: UUID?
@@ -249,6 +250,13 @@ struct ContentView: View {
             Button("About") {
                 NSApp.orderFrontStandardAboutPanel(nil)
                 NSApp.activate(ignoringOtherApps: true)
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .font(.callout)
+
+            Button("Help") {
+                onOpenHelp()
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)

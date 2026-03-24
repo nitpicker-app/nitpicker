@@ -6,6 +6,7 @@ class StatusBarController: NSObject {
     private let popover = NSPopover()
     private let contentViewModel: ContentViewModel
     private var settingsWindow: NSWindow?
+    private var helpWindow: NSWindow?
     private var eventMonitor: Any?
 
     init(viewModel: ContentViewModel) {
@@ -33,9 +34,11 @@ class StatusBarController: NSObject {
     private func setupPopover() {
         popover.behavior = .applicationDefined
         popover.animates = true
-        let contentView = ContentView(viewModel: contentViewModel) { [weak self] in
+        let contentView = ContentView(viewModel: contentViewModel, onOpenSettings: { [weak self] in
             self?.openSettings()
-        }
+        }, onOpenHelp: { [weak self] in
+            self?.openHelp()
+        })
         popover.contentViewController = NSHostingController(rootView: contentView)
     }
 
@@ -97,6 +100,14 @@ class StatusBarController: NSObject {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        let helpItem = NSMenuItem(
+            title: "Help",
+            action: #selector(openHelp),
+            keyEquivalent: ""
+        )
+        helpItem.target = self
+        menu.addItem(helpItem)
+
         let aboutItem = NSMenuItem(
             title: "About Nitpicker",
             action: #selector(showAbout),
@@ -149,6 +160,31 @@ class StatusBarController: NSObject {
 
     @objc func showAbout() {
         NSApp.orderFrontStandardAboutPanel(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc func openHelp() {
+        if let window = helpWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Nitpicker Help"
+        window.titlebarAppearsTransparent = true
+        window.isReleasedWhenClosed = false
+        window.contentViewController = NSHostingController(rootView: HelpView())
+        window.setContentSize(NSSize(width: 420, height: 520))
+        window.center()
+
+        helpWindow = window
+        window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 }

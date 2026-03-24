@@ -120,7 +120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func showHelp() {
-        statusBarController?.openSettings()
+        statusBarController?.openHelp()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
