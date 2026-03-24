@@ -112,9 +112,10 @@ class StatusBarController: NSObject {
         } else {
             NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.collectionBehavior = [
-                .canJoinAllSpaces, .fullScreenAuxiliary
-            ]
+            if let popoverWindow = popover.contentViewController?.view.window {
+                popoverWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                popoverWindow.makeKey()
+            }
             eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
                 self?.closePopover()
             }
@@ -185,6 +186,7 @@ class StatusBarController: NSObject {
     }
 
     @objc func openSettings() {
+        closePopover()
         if let window = settingsWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
@@ -216,6 +218,7 @@ class StatusBarController: NSObject {
     }
 
     @objc func openHelp() {
+        closePopover()
         if let window = helpWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)

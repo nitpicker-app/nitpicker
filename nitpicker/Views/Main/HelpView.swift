@@ -7,17 +7,17 @@ import SwiftUI
 
 struct HelpView: View {
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 20) {
                 helpSection("Getting Started") {
                     helpRow(icon: "1.circle.fill", color: .blue,
                             title: "Grant Accessibility permission",
                             detail: "Required once. System Settings → Privacy & Security → Accessibility.")
                     helpRow(icon: "2.circle.fill", color: .blue,
                             title: "Add your OpenAI API key",
-                            detail: "Click ⚙ in the popover to open Settings.")
+                            detail: "Click ⚙ in the popover to open Settings. The key is stored securely in your Keychain.")
                     helpRow(icon: "3.circle.fill", color: .blue,
-                            title: "Select text and press ⌘⇧B",
+                            title: "Select text and press ⌘ ⇧ B",
                             detail: "Works in any app — browser, email, editor, chat.")
                 }
 
@@ -33,7 +33,7 @@ struct HelpView: View {
                             detail: "Removes filler and redundancy while preserving meaning.")
                     helpRow(icon: "globe", color: .teal,
                             title: "Translate",
-                            detail: "Translates selected text to your chosen language. Pick the language from the popover.")
+                            detail: "Translates selected text to your chosen language. Pick the target language from the popover.")
                 }
 
                 helpSection("Custom Modes") {
@@ -45,10 +45,13 @@ struct HelpView: View {
                 helpSection("Correction History") {
                     helpRow(icon: "clock", color: .secondary,
                             title: "Recent corrections",
-                            detail: "The popover shows your last 10 corrections. Tap any entry to expand a word-level diff — deletions in red, insertions in green.")
+                            detail: "The popover shows your last 10 corrections with word-level diff — deletions in red, insertions in green.")
                     helpRow(icon: "doc.on.doc", color: .secondary,
                             title: "Copy corrected text",
-                            detail: "Expand a history entry and tap the copy icon, or right-click a row for copy options.")
+                            detail: "Click any row to copy the corrected text. Hover to reveal the copy icon. Right-click for additional options including copying the original.")
+                    helpRow(icon: "info.circle", color: .secondary,
+                            title: "See the original",
+                            detail: "Hover over a correction and hold — a tooltip shows the original text before changes.")
                 }
 
                 helpSection("Troubleshooting") {
@@ -65,14 +68,13 @@ struct HelpView: View {
             }
             .padding(20)
         }
-        .frame(width: 420, height: 520)
+        .frame(width: 420, height: 500)
     }
 
     private func helpSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.primary)
             content()
         }
     }

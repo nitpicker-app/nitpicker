@@ -6,16 +6,18 @@
 //
 
 import SwiftUI
-import Combine
+
+private class HistoryState: ObservableObject {
+    @Published var copiedID: UUID?
+    @Published var hoveredID: UUID?
+}
 
 struct ContentView: View {
     @ObservedObject var viewModel: ContentViewModel
     @ObservedObject private var modeManager = ModeManager.shared
     var onOpenSettings: () -> Void = {}
     var onOpenHelp: () -> Void = {}
-    @State private var copiedID: UUID?
-    @State private var hoveredID: UUID?
-    @State private var expandedID: UUID?
+    @StateObject private var historyState = HistoryState()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,15 +34,6 @@ struct ContentView: View {
         .frame(width: 280)
     }
 
-    @ViewBuilder
-    private var mainContent: some View {
-        if viewModel.history.isEmpty {
-            emptyState
-        } else {
-            historyList
-        }
-    }
-
     // MARK: - Header
 
     private var header: some View {
@@ -52,11 +45,8 @@ struct ContentView: View {
                 ProgressView().controlSize(.small)
             }
             modePicker
-            Button {
-                openSettings()
-            } label: {
-                Image(systemName: "gear")
-                    .imageScale(.medium)
+            Button { onOpenSettings() } label: {
+                Image(systemName: "gear").imageScale(.medium)
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
@@ -91,6 +81,8 @@ struct ContentView: View {
         .fixedSize()
     }
 
+    // MARK: - Translate
+
     private static let translateLanguages = [
         "English", "Spanish", "French", "German", "Italian", "Portuguese",
         "Dutch", "Russian", "Chinese", "Japanese", "Korean", "Arabic", "Hindi"
@@ -112,134 +104,90 @@ struct ContentView: View {
         .padding(.vertical, 6)
     }
 
-    // MARK: - Empty State
+    // MARK: - Main content
+
+    @ViewBuilder
+    private var mainContent: some View {
+        if viewModel.history.isEmpty {
+            emptyState
+        } else {
+            historyList
+        }
+    }
+
+    // MARK: - Empty state
 
     private var emptyState: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             if !viewModel.hasAPIKey {
-                warningLabel("API key not configured", systemImage: "key.fill")
+                Label("API key not configured", systemImage: "key.fill")
+                    .font(.callout)
+                    .foregroundStyle(.orange)
             } else if !viewModel.hasAccessibilityPermission {
-                warningLabel("Accessibility permission required", systemImage: "lock.shield")
+                Label("Accessibility permission required", systemImage: "lock.shield")
+                    .font(.callout)
+                    .foregroundStyle(.orange)
             } else {
-                Text("⌘⇧B")
-                    .font(.system(.callout, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                Text("Select text and press ⌘⇧B to correct it")
+                Text("⌘ ⇧ B")
+                    .font(.system(.title3, design: .monospaced, weight: .medium))
+                    .foregroundStyle(.primary.opacity(0.6))
+                Text("Select text anywhere and press the shortcut to correct it.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 24)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 32)
     }
 
-    private func warningLabel(_ text: String, systemImage: String) -> some View {
-        Label(text, systemImage: systemImage)
-            .font(.callout)
-            .foregroundStyle(.orange)
-    }
-
-    // MARK: - History
+    // MARK: - History list
 
     private var historyList: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Recent Corrections")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Spacer()
-                if case .correcting = viewModel.correctionStatus {
-                    ProgressView().controlSize(.mini)
-                } else {
-                    Button("Clear") {
-                        viewModel.history.removeAll()
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 0) {
+                ForEach(viewModel.history) { entry in
+                    historyRow(entry)
+                    if entry.id != viewModel.history.last?.id {
+                        Divider()
+                            .padding(.leading, 14)
                     }
-                    .buttonStyle(.borderless)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 8)
-            .padding(.bottom, 2)
-
-            ForEach(viewModel.history) { entry in
-                historyRow(entry)
-            }
-            .padding(.bottom, 4)
         }
-        .animation(.default, value: viewModel.history.map(\.id))
+        .frame(maxHeight: 320)
     }
 
     private func historyRow(_ entry: CorrectionEntry) -> some View {
-        let isCopied = copiedID == entry.id
-        let isHovered = hoveredID == entry.id
-        let isExpanded = expandedID == entry.id
-        let diff = diffAttributedString(original: entry.original, corrected: entry.corrected)
+        let isCopied = historyState.copiedID == entry.id
+        let isHovered = historyState.hoveredID == entry.id
 
-        return VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
-                Text(diff)
-                    .font(.caption)
-                    .lineLimit(isExpanded ? nil : 1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        return HStack(alignment: .top, spacing: 10) {
+            Text(diffAttributedString(original: entry.original, corrected: entry.corrected))
+                .font(.caption)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                if isCopied {
-                    Image(systemName: "checkmark")
-                        .imageScale(.small)
-                        .foregroundStyle(.green)
-                        .transition(.opacity)
-                } else if isExpanded {
-                    Button {
-                        copyToClipboard(entry.corrected, id: entry.id)
-                    } label: {
-                        Image(systemName: "doc.on.doc")
-                            .imageScale(.small)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.borderless)
-                } else {
-                    Text(entry.date, style: .relative)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-            }
+            Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+                .imageScale(.small)
+                .foregroundStyle(isCopied ? .green : .secondary)
+                .frame(width: 16, height: 16)
+                .opacity(isHovered || isCopied ? 1 : 0)
+                .animation(.easeInOut(duration: 0.12), value: isHovered)
+                .animation(.easeInOut(duration: 0.15), value: isCopied)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 6)
-        .background(isHovered ? Color.primary.opacity(0.06) : Color.clear)
+        .padding(.vertical, 9)
+        .background(isHovered ? Color.primary.opacity(0.05) : Color.clear)
         .contentShape(Rectangle())
-        .onHover { hoveredID = $0 ? entry.id : nil }
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                expandedID = isExpanded ? nil : entry.id
-            }
-        }
+        .onHover { historyState.hoveredID = $0 ? entry.id : nil }
+        .onTapGesture { copyToClipboard(entry.corrected, id: entry.id) }
+        .help("Original: \(entry.original)")
         .contextMenu {
-            Button("Copy Corrected") {
-                copyToClipboard(entry.corrected, id: entry.id)
-            }
-            Button("Copy Original") {
-                copyToClipboard(entry.original, id: nil)
-            }
-        }
-        .animation(.easeInOut(duration: 0.15), value: isCopied)
-        .animation(.easeInOut(duration: 0.2), value: isExpanded)
-    }
-
-    private func copyToClipboard(_ text: String, id: UUID?) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-        if let id {
-            withAnimation(.easeInOut(duration: 0.15)) { copiedID = id }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    if copiedID == id { copiedID = nil }
-                }
-            }
+            Button("Copy Corrected") { copyToClipboard(entry.corrected, id: entry.id) }
+            Button("Copy Original") { copyToClipboard(entry.original, id: nil) }
         }
     }
 
@@ -247,22 +195,21 @@ struct ContentView: View {
 
     private var footer: some View {
         HStack {
-            Button("About") {
-                NSApp.orderFrontStandardAboutPanel(nil)
-                NSApp.activate(ignoringOtherApps: true)
+            if !viewModel.history.isEmpty {
+                Button("Clear") {
+                    viewModel.history.removeAll()
+                    historyState.hoveredID = nil
+                    historyState.copiedID = nil
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .font(.caption)
             }
-            .buttonStyle(.borderless)
-            .foregroundStyle(.secondary)
-            .font(.callout)
-
             Spacer()
-
-            Button("Help") {
-                onOpenHelp()
-            }
-            .buttonStyle(.borderless)
-            .foregroundStyle(.secondary)
-            .font(.callout)
+            Button("Help") { onOpenHelp() }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .font(.caption)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -270,8 +217,16 @@ struct ContentView: View {
 
     // MARK: - Actions
 
-    private func openSettings() {
-        onOpenSettings()
+    private func copyToClipboard(_ text: String, id: UUID?) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        guard let id else { return }
+        withAnimation(.easeInOut(duration: 0.15)) { historyState.copiedID = id }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                if self.historyState.copiedID == id { self.historyState.copiedID = nil }
+            }
+        }
     }
 }
 

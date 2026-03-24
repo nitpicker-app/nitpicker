@@ -8,11 +8,18 @@
 import Foundation
 import Combine
 
-struct CorrectionEntry: Identifiable {
-    let id = UUID()
+struct CorrectionEntry: Identifiable, Codable {
+    let id: UUID
     let original: String
     let corrected: String
     let date: Date
+
+    init(original: String, corrected: String, date: Date) {
+        self.id = UUID()
+        self.original = original
+        self.corrected = corrected
+        self.date = date
+    }
 }
 
 class ContentViewModel: ObservableObject {
@@ -24,8 +31,31 @@ class ContentViewModel: ObservableObject {
         case failed
     }
 
+    private static let historyKey = "correctionHistory"
+
     @Published var correctionStatus: CorrectionStatus = .idle
-    @Published var history: [CorrectionEntry] = []
+    @Published var history: [CorrectionEntry] = ContentViewModel.loadHistory()
+
+    init() {
+        $history
+            .dropFirst()
+            .sink { ContentViewModel.saveHistory($0) }
+            .store(in: &cancellables)
+    }
+
+    private var cancellables = Set<AnyCancellable>()
+
+    private static func loadHistory() -> [CorrectionEntry] {
+        guard let data = UserDefaults.standard.data(forKey: historyKey),
+              let entries = try? JSONDecoder().decode([CorrectionEntry].self, from: data)
+        else { return [] }
+        return entries
+    }
+
+    private static func saveHistory(_ entries: [CorrectionEntry]) {
+        let data = try? JSONEncoder().encode(entries)
+        UserDefaults.standard.set(data, forKey: historyKey)
+    }
 
     var hasAPIKey: Bool {
         !(KeychainService.shared.getAPIKey() ?? "").isEmpty

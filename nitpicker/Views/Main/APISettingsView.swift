@@ -11,13 +11,17 @@ import ServiceManagement
 struct APISettingsView: View {
     @ObservedObject private var modeManager = ModeManager.shared
     @State private var apiKey: String = KeychainService.shared.getAPIKey() ?? ""
-    @State private var showSaved = false
-    @State private var errorMessage: String?
+    @State private var apiKeySaveState: SaveState = .idle
     @State private var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled
     @State private var selectedModel: String = UserDefaults.standard.string(forKey: "selectedModel") ?? "gpt-5.4-mini"
     @State private var editingMode: CorrectionMode?
     @State private var isAddingMode = false
     @State private var draftMode = CorrectionMode(id: "", name: "", systemPrompt: "")
+    @FocusState private var apiKeyFocused: Bool
+
+    private enum SaveState: Equatable {
+        case idle, saved, error(String)
+    }
 
     private let models: [(id: String, label: String)] = [
         ("gpt-5.4",      "GPT-5.4"),
@@ -31,138 +35,127 @@ struct APISettingsView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            Form {
-                Section {
-                    Toggle("Launch at Login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { newValue in
-                            updateLaunchAtLogin(newValue)
-                        }
-                } header: {
-                    Text("General")
-                }
-
-                Section {
-                    Picker("Model", selection: $selectedModel) {
-                        ForEach(models, id: \.id) { model in
-                            Text(model.label).tag(model.id)
-                        }
+        Form {
+            Section {
+                Toggle("Launch at Login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { newValue in
+                        updateLaunchAtLogin(newValue)
                     }
-                    .onChange(of: selectedModel) { newValue in
-                        UserDefaults.standard.set(newValue, forKey: "selectedModel")
-                    }
-                } header: {
-                    Text("AI Model")
-                }
-
-                Section {
-                    SecureField("sk-...", text: $apiKey)
-                } header: {
-                    Text("OpenAI API Key")
-                } footer: {
-                    Text("Stored securely in your Keychain.")
-                }
-
-                Section {
-                    if modeManager.customModes.isEmpty {
-                        Text("No custom modes yet.")
-                            .foregroundStyle(.secondary)
-                            .font(.callout)
-                    } else {
-                        ForEach(modeManager.customModes) { mode in
-                            HStack {
-                                Text(mode.name)
-                                Spacer()
-                                Button {
-                                    draftMode = mode
-                                    editingMode = mode
-                                } label: {
-                                    Image(systemName: "pencil")
-                                        .foregroundStyle(.secondary)
-                                }
-                                .buttonStyle(.borderless)
-                                .help("Edit")
-
-                                Button {
-                                    modeManager.deleteMode(id: mode.id)
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.borderless)
-                                .help("Delete")
-                            }
-                        }
-                    }
-
-                    Button {
-                        draftMode = CorrectionMode(id: UUID().uuidString, name: "", systemPrompt: "")
-                        isAddingMode = true
-                    } label: {
-                        Label("Add Mode", systemImage: "plus")
-                    }
-                } header: {
-                    Text("Custom Modes")
-                } footer: {
-                    Text("Custom modes appear in the mode picker and use your system prompt.")
-                }
-            }
-            .formStyle(.grouped)
-            .sheet(isPresented: $isAddingMode) {
-                ModeEditView(mode: $draftMode, title: "New Mode") {
-                    modeManager.addMode(draftMode)
-                    isAddingMode = false
-                } onCancel: {
-                    isAddingMode = false
-                }
-            }
-            .sheet(item: $editingMode) { _ in
-                ModeEditView(mode: $draftMode, title: "Edit Mode") {
-                    modeManager.updateMode(draftMode)
-                    editingMode = nil
-                } onCancel: {
-                    editingMode = nil
-                }
+            } header: {
+                Text("General")
             }
 
-            Divider()
+            Section {
+                Picker("Model", selection: $selectedModel) {
+                    ForEach(models, id: \.id) { model in
+                        Text(model.label).tag(model.id)
+                    }
+                }
+                .onChange(of: selectedModel) { newValue in
+                    UserDefaults.standard.set(newValue, forKey: "selectedModel")
+                }
+            } header: {
+                Text("AI Model")
+            }
 
-            HStack {
+            Section {
+                SecureField("sk-...", text: $apiKey)
+                    .focused($apiKeyFocused)
+                    .onSubmit { saveAPIKey() }
+                    .onChange(of: apiKeyFocused) { focused in
+                        if !focused { saveAPIKey() }
+                    }
+            } header: {
+                Text("OpenAI API Key")
+            } footer: {
                 Group {
-                    if showSaved {
-                        Label("Saved", systemImage: "checkmark.circle.fill")
+                    switch apiKeySaveState {
+                    case .idle:
+                        Text("Stored securely in your Keychain.")
+                    case .saved:
+                        Label("Saved to Keychain", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.secondary)
-                    } else if let msg = errorMessage {
-                        Text(msg)
-                            .foregroundStyle(.red)
+                    case .error(let msg):
+                        Text(msg).foregroundStyle(.red)
                     }
                 }
-                .font(.callout)
-                .transition(.opacity)
-
-                Spacer()
-
-                Button("Save") { save() }
-                    .keyboardShortcut(.defaultAction)
+                .animation(.easeInOut(duration: 0.2), value: apiKeySaveState)
             }
-            .animation(.default, value: showSaved)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+
+            Section {
+                if modeManager.customModes.isEmpty {
+                    Text("No custom modes yet.")
+                        .foregroundStyle(.tertiary)
+                } else {
+                    ForEach(modeManager.customModes) { mode in
+                        HStack {
+                            Text(mode.name)
+                            Spacer()
+                            Button {
+                                draftMode = mode
+                                editingMode = mode
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Edit")
+
+                            Button {
+                                modeManager.deleteMode(id: mode.id)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Delete")
+                        }
+                    }
+                }
+
+                Button {
+                    draftMode = CorrectionMode(id: UUID().uuidString, name: "", systemPrompt: "")
+                    isAddingMode = true
+                } label: {
+                    Label("Add Mode", systemImage: "plus")
+                }
+            } header: {
+                Text("Custom Modes")
+            } footer: {
+                Text("Custom modes appear in the mode picker and use your system prompt.")
+            }
+        }
+        .formStyle(.grouped)
+        .sheet(isPresented: $isAddingMode) {
+            ModeEditView(mode: $draftMode, title: "New Mode") {
+                modeManager.addMode(draftMode)
+                isAddingMode = false
+            } onCancel: {
+                isAddingMode = false
+            }
+        }
+        .sheet(item: $editingMode) { _ in
+            ModeEditView(mode: $draftMode, title: "Edit Mode") {
+                modeManager.updateMode(draftMode)
+                editingMode = nil
+            } onCancel: {
+                editingMode = nil
+            }
         }
     }
 
-    private func save() {
+    private func saveAPIKey() {
+        guard !apiKey.isEmpty else { return }
         do {
             try KeychainService.shared.saveAPIKey(apiKey)
-            withAnimation { showSaved = true }
-            errorMessage = nil
+            withAnimation { apiKeySaveState = .saved }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                withAnimation { showSaved = false }
+                withAnimation { apiKeySaveState = .idle }
             }
         } catch {
-            errorMessage = error.localizedDescription
+            apiKeySaveState = .error(error.localizedDescription)
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                errorMessage = nil
+                apiKeySaveState = .idle
             }
         }
     }
@@ -175,7 +168,6 @@ struct APISettingsView: View {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            // Revert the toggle if the system call failed
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
@@ -227,9 +219,5 @@ struct ModeEditView: View {
 
 #Preview {
     APISettingsView()
-        .frame(width: 360)
-}
-
-#Preview {
-    APISettingsView()
+        .frame(width: 380)
 }
