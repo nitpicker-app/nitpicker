@@ -6,7 +6,6 @@
 //
 
 import Cocoa
-import ServiceManagement
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -14,56 +13,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let viewModel = ContentViewModel()
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        print("Application did finish launching")
+        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return }
 
-        // Check if preview is running
-        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"]
-            == "1"
-        {
-            print(
-                "Running in Xcode Previews mode - skipping full initialization"
-            )
-        } else {
-            //         Check accessibility permissions with improved logic
-            let permissionManager = AccessibilityPermissionManager.shared
-
-            // Always check the actual system permission status
-            if !permissionManager.hasAccessibilityPermissions {
-                print(
-                    "⚠️ Accessibility permissions not granted - requesting now"
-                )
-                permissionManager.checkAndRequestAccessibilityPermissions(
-                    showUI: true
-                )
-            }
-            
-            registerAppForAutoLaunch()
+        let permissionManager = AccessibilityPermissionManager.shared
+        if !permissionManager.hasAccessibilityPermissions {
+            permissionManager.checkAndRequestAccessibilityPermissions(showUI: true)
         }
 
-        let contentView = ContentView(viewModel: viewModel)
-        statusBarController = StatusBarController(contentView: contentView)
-
-        // Set up the application menu
+        statusBarController = StatusBarController(viewModel: viewModel)
         setupApplicationMenu()
 
-        // Register hotkey for grammar correction
-        HotKeyManager.shared.registerHotKey { [weak self] in
-            print("HotKey triggered: Cmd+Shift+B")
+        HotKeyManager.shared.registerCorrectionHotKey { [weak self] in
             self?.viewModel.correctSelectedText()
         }
-    }
 
-    private func registerAppForAutoLaunch() {
-        do {
-            let appService = SMAppService.mainApp
-            if appService.status != .enabled {
-                try appService.register()
-                print("✅ Registered Nitpicker to auto-launch at login")
-            } else {
-                print("ℹ️ Nitpicker is already registered for auto-launch")
-            }
-        } catch {
-            print("❌ Failed to register for auto-launch: \(error)")
+        if !viewModel.hasAPIKey {
+            statusBarController?.openSettings()
         }
     }
 
@@ -89,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         appMenu.addItem(
             NSMenuItem(
-                title: "API Settings",
+                title: "Settings…",
                 action: #selector(showAPISettings),
                 keyEquivalent: ","
             )
@@ -147,7 +112,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func showAPISettings() {
-        statusBarController?.showAPISettings()
+        statusBarController?.openSettings()
     }
 
     @objc func showAbout() {
@@ -155,7 +120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func showHelp() {
-        statusBarController?.showHelp()
+        statusBarController?.openSettings()
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {

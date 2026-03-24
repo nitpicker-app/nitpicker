@@ -8,7 +8,10 @@ A macOS menubar application that helps you correct grammar in any text on your M
 ## Features
 
 - 🔤 Grammar correction for any selected text across macOS
-- 🚀 Fast correction with a keyboard shortcut (Cmd+Shift+B)
+- 🎤 Real-time voice dictation with streaming transcription
+- 🚀 Fast correction with keyboard shortcuts
+  - Cmd+Shift+B for grammar correction
+  - Cmd+Shift+D for voice dictation
 - 🧠 AI-powered using OpenAI's GPT models
 - 🔒 Privacy-focused: Local API key storage
 - 👻 Unobtrusive menubar-only interface
@@ -42,8 +45,18 @@ A macOS menubar application that helps you correct grammar in any text on your M
 3. Wait for the correction to complete.
 4. The corrected text will automatically replace the selected text.
 
-Nitpicker uses OpenAI's GPT-4o-mini model for fast, accurate corrections and requires an internet connection.
+### Voice Dictation
 
+## Accessibility Permissions
+
+Nitpicker requires accessibility permissions to:
+- Read text you've selected.
+- Replace text with corrected versions.
+- Paste transcribed text from dictation.
+
+Nitpicker also requires microphone permissions for voice dictation.
+
+You can grant these permissions in System Settings → Privacy & Security → Accessibility and Microphone.
 ## Accessibility Permissions
 
 Nitpicker requires accessibility permissions to:
@@ -55,9 +68,10 @@ You can grant these permissions in System Settings → Privacy & Security → Ac
 ## Development
 
 ### Project Structure
+### Dependencies
 
-- **AppDelegate.swift**: Main application delegate with auto-launch support.
-- **StatusBarController.swift**: Controls the menubar UI and interactions.
+- [HotKey](https://github.com/soffes/HotKey): Global keyboard shortcut handling.
+- [FluidAudio](https://github.com/FluidInference/FluidAudio): On-device streaming speech recognition.
 - **Helpers/**: Utility classes for accessibility and clipboard operations.
 - **Services/**: 
   - **OpenAIService.swift**: Cloud-based AI text correction.
@@ -74,19 +88,24 @@ You can grant these permissions in System Settings → Privacy & Security → Ac
 1. Clone the repository:
    ```
    git clone https://github.com/nitpicker-app/nitpicker.git
-   ```
-2. Open `nitpicker.xcodeproj` in Xcode.
-3. Build and run the project (`Cmd+R`).
-
 ## Privacy
 
-Nitpicker stores your API key locally in the Keychain and only sends the selected text to OpenAI's API for correction. No other data is collected or transmitted.
+Nitpicker stores your API key locally in the Keychain and only sends the selected text to OpenAI's API for grammar correction. Voice dictation is processed entirely on-device using FluidAudio - no audio is sent to external servers. No other data is collected or transmitted.
 
 ## Latest Updates
+
+### v1.1 - December 2025
+- ✨ **New**: Real-time voice dictation with streaming transcription (Cmd+Shift+D).
+- 🎤 **New**: On-device speech recognition using FluidAudio.
+- 🔧 **Improved**: Enhanced hotkey management supporting multiple shortcuts.
 
 ### v1.0 - July 2025
 - ✨ **New**: AI-powered grammar correction using OpenAI.
 - 🔧 **Improved**: Enhanced prompt engineering for better corrections.
+- 🔧 **Improved**: Better window management and UI consistency.
+- 🛡️ **Security**: Migrated API key storage from UserDefaults to Keychain.
+- 🚀 **Performance**: Optimized text correction workflow.
+- 📱 **UX**: Updated app icon and status bar interface.er corrections.
 - 🔧 **Improved**: Better window management and UI consistency.
 - 🛡️ **Security**: Migrated API key storage from UserDefaults to Keychain.
 - 🚀 **Performance**: Optimized text correction workflow.

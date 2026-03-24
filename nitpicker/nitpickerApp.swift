@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct nitpickerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+
     var body: some Scene {
         Settings {
             EmptyView()

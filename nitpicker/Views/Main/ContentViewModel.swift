@@ -8,34 +8,68 @@
 import Foundation
 import Combine
 
+struct CorrectionEntry: Identifiable {
+    let id = UUID()
+    let original: String
+    let corrected: String
+    let date: Date
+}
+
 class ContentViewModel: ObservableObject {
-    @Published var isLoading = false
-    @Published var lastCorrection: ClippedText?
+
+    enum CorrectionStatus: Equatable {
+        case idle
+        case correcting
+        case done(corrected: String)
+        case failed
+    }
+
+    @Published var correctionStatus: CorrectionStatus = .idle
+    @Published var history: [CorrectionEntry] = []
+
+    var hasAPIKey: Bool {
+        !(KeychainService.shared.getAPIKey() ?? "").isEmpty
+    }
+
+    var hasAccessibilityPermission: Bool {
+        AccessibilityPermissionManager.shared.hasAccessibilityPermissions
+    }
 
     func correctSelectedText() {
-        // First verify accessibility permissions are granted
         let permissionManager = AccessibilityPermissionManager.shared
-        if !permissionManager.hasAccessibilityPermissions {
-            print("ContentViewModel: ⚠️ Cannot correct text - accessibility permissions not granted")
+        guard permissionManager.hasAccessibilityPermissions else {
             permissionManager.checkAndRequestAccessibilityPermissions(showUI: true)
             return
         }
-        
-        guard let selectedText = ClipboardHelper.copySelectedText() else {
-            return
-        }
-        
-        isLoading = true
+
+        guard let selectedText = ClipboardHelper.copySelectedText() else { return }
+
+        correctionStatus = .correcting
 
         Task {
             await TextCorrectionServiceFactory.current.correctGrammar(text: selectedText) { [weak self] corrected in
-                print("ContentViewModel: Received corrected text from service.")
-                print("ContentViewModel: Corrected text: \(String(corrected.prefix(50)))...")
                 DispatchQueue.main.async {
-                    self?.lastCorrection = ClippedText(originalText: selectedText, correctedText: corrected)
-                    print("ContentViewModel: Replacing selected text with corrected version")
+                    guard let corrected else {
+                        self?.correctionStatus = .failed
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                            if case .failed = self?.correctionStatus ?? .idle {
+                                self?.correctionStatus = .idle
+                            }
+                        }
+                        return
+                    }
                     ClipboardHelper.replaceSelectedText(with: corrected)
-                    self?.isLoading = false
+                    self?.correctionStatus = .done(corrected: corrected)
+                    let entry = CorrectionEntry(original: selectedText, corrected: corrected, date: Date())
+                    self?.history.insert(entry, at: 0)
+                    if (self?.history.count ?? 0) > 10 {
+                        self?.history = Array(self!.history.prefix(10))
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                        if case .done = self?.correctionStatus ?? .idle {
+                            self?.correctionStatus = .idle
+                        }
+                    }
                 }
             }
         }

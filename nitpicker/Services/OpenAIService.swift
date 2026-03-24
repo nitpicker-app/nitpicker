@@ -14,8 +14,8 @@ class OpenAIService: TextCorrectionService {
         return KeychainService.shared.getAPIKey() ?? ""
     }
 
-    func correctGrammar(text: String, completion: @escaping (String) -> Void) async {
-        let url = URL(string: "https://api.openai.com/v1/chat/completions")!
+    func correctGrammar(text: String, completion: @escaping (String?) -> Void) async {
+        let url = URL(string: "https://api.openai.com/v1/responses")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(
@@ -24,12 +24,10 @@ class OpenAIService: TextCorrectionService {
         )
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
+        let model = UserDefaults.standard.string(forKey: "selectedModel") ?? "gpt-5.4-mini"
         let body: [String: Any] = [
-            "model": "gpt-4o-mini",
-            "messages": [
-                [
-                    "role": "system",
-                    "content": """
+            "model": model,
+            "instructions": """
                     You are an advanced AI writing assistant that helps improve text quality across multiple dimensions while preserving the author's voice and intent. Your role is to enhance clarity, correctness, and readability.
 
                     **Your Responsibilities:**
@@ -88,71 +86,56 @@ class OpenAIService: TextCorrectionService {
 
                     Remember: Your goal is to make the writing clearer, more correct, and more impactful—not to rewrite it entirely. Think like Grammarly meets Hemingway Editor.
                     """,
-                ],
-                [
-                    "role": "user",
-                    "content": "User Input:\n" + text,
-                ],
-            ],
+            "input": "User Input:\n" + text,
             "temperature": 0.2,
         ]
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         URLSession.shared.dataTask(with: request) { data, response, error in
-            // Check for errors
             if let error = error {
                 print("OpenAI API Error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    completion(text)
-                }
+                DispatchQueue.main.async { completion(nil) }
                 return
             }
 
-            // Check HTTP response
-            if let httpResponse = response as? HTTPURLResponse {
-                print("OpenAI API Status Code: \(httpResponse.statusCode)")
-
-                if httpResponse.statusCode != 200 {
-                    if let data = data,
-                        let errorJson = try? JSONSerialization.jsonObject(
-                            with: data
-                        ) as? [String: Any]
-                    {
-                        print("OpenAI API Error: \(errorJson)")
-                    }
-
-                    DispatchQueue.main.async {
-                        completion(text)
-                    }
-                    return
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                if let data = data,
+                   let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    print("OpenAI API Error (\(httpResponse.statusCode)): \(errorJson)")
                 }
+                DispatchQueue.main.async { completion(nil) }
+                return
             }
 
             guard let data = data,
-                let json = try? JSONSerialization.jsonObject(with: data)
-                    as? [String: Any],
-                let choices = json["choices"] as? [[String: Any]],
-                let message = choices.first?["message"] as? [String: Any],
-                let content = message["content"] as? String
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
             else {
                 print("OpenAI API: Failed to parse response")
-                if let data = data {
-                    print(
-                        "Response data: \(String(data: data, encoding: .utf8) ?? "Unable to decode response")"
-                    )
-                }
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+
+            // Responses API returns output_text as a top-level convenience field
+            if let outputText = json["output_text"] as? String {
                 DispatchQueue.main.async {
-                    completion(text)
+                    completion(outputText.trimmingCharacters(in: .whitespacesAndNewlines))
                 }
                 return
             }
 
-            DispatchQueue.main.async {
-                completion(
-                    content.trimmingCharacters(in: .whitespacesAndNewlines)
-                )
+            // Fallback: traverse output[0].content[0].text
+            if let output = json["output"] as? [[String: Any]],
+               let content = output.first?["content"] as? [[String: Any]],
+               let text = content.first?["text"] as? String {
+                DispatchQueue.main.async {
+                    completion(text.trimmingCharacters(in: .whitespacesAndNewlines))
+                }
+                return
             }
+
+            print("OpenAI API: Failed to parse response")
+            DispatchQueue.main.async { completion(nil) }
         }.resume()
     }
 }

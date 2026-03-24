@@ -42,7 +42,7 @@ class ClipboardHelper {
         print("ClipboardHelper: Key down Cmd+C posted")
         
         // Small delay
-        usleep(100_000) // 100ms
+        usleep(20_000) // 20ms
         
         // Key up for Cmd+C
         let cmdCUp = CGEvent(keyboardEventSource: src, virtualKey: 8, keyDown: false)
@@ -51,7 +51,7 @@ class ClipboardHelper {
         print("ClipboardHelper: Key up Cmd+C posted")
 
         // Wait for clipboard to be updated
-        usleep(500_000) // 500ms should be enough
+        usleep(100_000) // 100ms is sufficient
         
         // Get the copied text
         let selectedText = pb.string(forType: .string)
@@ -97,7 +97,7 @@ class ClipboardHelper {
         }
         
         // Small delay before pasting
-        usleep(100_000) // 100ms
+        usleep(20_000) // 20ms
         
         // Key down for Cmd+V
         let cmdVDown = CGEvent(keyboardEventSource: src, virtualKey: 9, keyDown: true)
