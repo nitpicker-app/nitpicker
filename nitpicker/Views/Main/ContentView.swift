@@ -255,17 +255,10 @@ struct ContentView: View {
             .foregroundStyle(.secondary)
             .font(.callout)
 
-            Button("Help") {
-                onOpenHelp()
-            }
-            .buttonStyle(.borderless)
-            .foregroundStyle(.secondary)
-            .font(.callout)
-
             Spacer()
 
-            Button("Quit") {
-                NSApp.terminate(nil)
+            Button("Help") {
+                onOpenHelp()
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)

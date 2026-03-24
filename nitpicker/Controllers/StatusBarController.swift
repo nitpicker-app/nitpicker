@@ -1,5 +1,6 @@
 import Cocoa
 import SwiftUI
+import Combine
 
 class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
@@ -8,6 +9,7 @@ class StatusBarController: NSObject {
     private var settingsWindow: NSWindow?
     private var helpWindow: NSWindow?
     private var eventMonitor: Any?
+    private var cancellables = Set<AnyCancellable>()
 
     init(viewModel: ContentViewModel) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -15,6 +17,7 @@ class StatusBarController: NSObject {
         super.init()
         setupStatusItem()
         setupPopover()
+        observeCorrectionStatus()
     }
 
     // MARK: - Setup
@@ -40,6 +43,55 @@ class StatusBarController: NSObject {
             self?.openHelp()
         })
         popover.contentViewController = NSHostingController(rootView: contentView)
+    }
+
+    // MARK: - Status icon
+
+    private func observeCorrectionStatus() {
+        contentViewModel.$correctionStatus
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                self?.updateStatusIcon(for: status)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateStatusIcon(for status: ContentViewModel.CorrectionStatus) {
+        guard let button = statusItem.button else { return }
+        stopPulse(button: button)
+        switch status {
+        case .idle:
+            setIcon("character.cursor.ibeam", button: button)
+        case .correcting:
+            setIcon("ellipsis", button: button)
+            startPulse(button: button)
+        case .done:
+            setIcon("checkmark", button: button)
+        case .failed:
+            setIcon("xmark", button: button)
+        }
+    }
+
+    private func setIcon(_ symbolName: String, button: NSStatusBarButton) {
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Nitpicker")?
+            .withSymbolConfiguration(config)
+    }
+
+    private func startPulse(button: NSStatusBarButton) {
+        button.wantsLayer = true
+        let pulse = CABasicAnimation(keyPath: "opacity")
+        pulse.fromValue = 1.0
+        pulse.toValue = 0.3
+        pulse.duration = 0.6
+        pulse.autoreverses = true
+        pulse.repeatCount = .infinity
+        pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        button.layer?.add(pulse, forKey: "nitpicker.pulse")
+    }
+
+    private func stopPulse(button: NSStatusBarButton) {
+        button.layer?.removeAnimation(forKey: "nitpicker.pulse")
     }
 
     // MARK: - Click handling
