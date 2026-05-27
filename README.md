@@ -11,7 +11,7 @@ Nitpicker is a macOS menubar app that corrects and transforms selected text usin
 - **Multiple correction modes** — Grammar, Formal, Concise, and Translate, switchable from the menubar popover
 - **Custom modes** — define your own modes with a name and system prompt; they persist across sessions
 - **Translate** — translate selected text to any of 13 languages with a single click
-- **Correction history** — tap any history entry to expand a word-level diff showing exactly what changed
+- **Correction history** — each history entry shows a word-level diff (red = removed, green = added); click to copy the corrected text
 - **Global hotkey** — ⌘⇧B works in any app without switching focus
 - **Privacy-first** — your API key is stored in the system Keychain; only the selected text is sent to OpenAI
 
