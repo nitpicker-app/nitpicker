@@ -88,3 +88,17 @@ About uses `NSApp.orderFrontStandardAboutPanel()` — no custom About view.
 ### Dependencies (SPM)
 
 - **HotKey** — global keyboard shortcut registration
+
+## Code Conventions
+
+- **Async pattern**: Service layer uses completion handlers (not `async`/`await`) for consistency with `URLSession.dataTask`. Use `DispatchQueue.main.async` for UI updates inside callbacks.
+- **State**: `@Published` + Combine for reactivity; `UserDefaults` for settings; Keychain for secrets.
+- **Testing**: Uses Swift Testing (`import Testing`, `@Test func ...`), **not** XCTest.
+- **Organization**: Use `// MARK: -` to divide files into logical sections.
+
+## Common Pitfalls
+
+- **`NSApp.sendAction(Selector("showSettingsWindow:"))`** silently fails in `LSBackgroundOnly` apps — use the manual `NSWindow` pattern in `StatusBarController` instead.
+- **`@State` in popovers**: Re-renders are unreliable inside `NSPopover` windows — use `@StateObject` with `ObservableObject` (see `HistoryState`).
+- **`statusItem.menu` lifecycle**: Must be `nil`'d after use (`set → performClick → nil`) to prevent it from intercepting left-click and breaking the popover toggle.
+- **Keychain duplicates**: Delete the existing item before re-saving to avoid `errSecDuplicateItem` errors.
